@@ -11,19 +11,6 @@ import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
-import org.snmp4j.CommunityTarget;
-import org.snmp4j.PDU;
-import org.snmp4j.Snmp;
-import org.snmp4j.Target;
-import org.snmp4j.event.ResponseEvent;
-import org.snmp4j.mp.SnmpConstants;
-import org.snmp4j.smi.Address;
-import org.snmp4j.smi.GenericAddress;
-import org.snmp4j.smi.OID;
-import org.snmp4j.smi.OctetString;
-import org.snmp4j.smi.VariableBinding;
-import org.snmp4j.transport.DefaultUdpTransportMapping;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -34,13 +21,18 @@ import java.io.IOException;
 
 public class SwitchConfigRetriever extends JFrame {
     private JButton startButton;
+    private JButton developerInfoButton;
     private JTextArea statusTextArea;
+    private JTextField subnetField;
+    private JTextField startIPField;
+    private JTextField endIPField;
+    private JTextField communityStringField;
 
     public SwitchConfigRetriever() {
         super("Switch Config Retriever");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(500, 300);
+        setSize(500, 400);
         setLocationRelativeTo(null);
 
         startButton = new JButton("Start");
@@ -63,21 +55,53 @@ public class SwitchConfigRetriever extends JFrame {
             }
         });
 
+        developerInfoButton = new JButton("Info");
+        developerInfoButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                createDeveloperInfoWindow();
+            }
+        });
+
         statusTextArea = new JTextArea();
         statusTextArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(statusTextArea);
 
+        subnetField = new JTextField("192.168.200");
+        subnetField.setToolTipText("Enter the subnet");
+        startIPField = new JTextField("1");
+        startIPField.setToolTipText("Enter the starting IP address");
+        endIPField = new JTextField("254");
+        endIPField.setToolTipText("Enter the ending IP address");
+        communityStringField = new JTextField("public");
+        communityStringField.setToolTipText("Enter the community string");
+
+        JPanel inputPanel = new JPanel(new GridLayout(4, 2));
+        inputPanel.add(new JLabel("Subnet:"));
+        inputPanel.add(subnetField);
+        inputPanel.add(new JLabel("Start IP:"));
+        inputPanel.add(startIPField);
+        inputPanel.add(new JLabel("End IP:"));
+        inputPanel.add(endIPField);
+        inputPanel.add(new JLabel("Community String:"));
+        inputPanel.add(communityStringField);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.add(startButton);
+        buttonPanel.add(developerInfoButton);
+
         setLayout(new BorderLayout());
-        add(startButton, BorderLayout.NORTH);
+        add(inputPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
     }
 
     private void retrieveSwitchConfigs() {
         String saveDirectory = "C:\\SwitchConfigs";
-        String subnet = "192.168.200";
-        int startIP = 1;
-        int endIP = 254;
-        String communityString = "public";
+        String subnet = subnetField.getText();
+        int startIP = Integer.parseInt(startIPField.getText());
+        int endIP = Integer.parseInt(endIPField.getText());
+        String communityString = communityStringField.getText();
         Snmp snmp;
         try {
             snmp = new Snmp(new DefaultUdpTransportMapping());
@@ -147,59 +171,72 @@ public class SwitchConfigRetriever extends JFrame {
                         updateStatus("Unsupported switch manufacturer: " + manufacturer);
                     }
                 } else {
-                    updateStatus("Failed to retrieve sysObjectID for switch: " + ipAddress);
+                    updateStatus("Failed to retrieve sysInfo for switch: " + ipAddress);
                 }
-            } catch (IOException e) {
-                updateStatus("Error occurred during SNMP operation: " + e.getMessage());
+            } catch (IOException ex) {
+                updateStatus("Failed to communicate with switch: " + ipAddress + " - " + ex.getMessage());
             }
         }
+        updateStatus("Switch config retrieval completed.");
     }
 
-
     private void createManufacturerDirectories(String saveDirectory) {
-        String[] manufacturers = { "Cisco", "Juniper", "CustomVendor", "d-link" };
-        for (String manufacturer : manufacturers) {
-            String manufacturerDirectory = getManufacturerDirectory(saveDirectory, manufacturer);
-            File directory = new File(manufacturerDirectory);
-            if (!directory.exists()) {
-                boolean created = directory.mkdirs();
-                if (created) {
-                    updateStatus("Created directory: " + manufacturerDirectory);
-                } else {
-                    updateStatus("Failed to create directory: " + manufacturerDirectory);
-                }
-            }
+        File directory = new File(saveDirectory);
+        if (!directory.exists()) {
+            directory.mkdirs();
         }
     }
 
     private String getManufacturerDirectory(String saveDirectory, String manufacturer) {
-        return saveDirectory + File.separator + manufacturer;
+        String manufacturerDirectory = saveDirectory + File.separator + manufacturer;
+        File directory = new File(manufacturerDirectory);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        return manufacturerDirectory;
     }
 
     private String getConfigOID(String manufacturer) {
         if (manufacturer.equals("Cisco")) {
-            return "1.3.6.1.2.1.25.3.5.1.4.1";
+            return "1.3.6.1.4.1.9.9.43.1.1.1.0";
         } else if (manufacturer.equals("Juniper")) {
-            return "1.3.6.1.2.1.25.3.5.1.4.2";
-        } else if (manufacturer.equals("CustomVendor")) {
-            return "1.3.6.1.2.1.25.3.5.1.4.3";
-        } else if (manufacturer.equals("d-link")) {
-            return "1.3.6.1.4.1.171.10.134.1.1.7.2.0";
+            return "1.3.6.1.4.1.2636.3.1.13.1.8";
         } else {
             return null;
         }
     }
 
-    private void updateStatus(String message) {
-        statusTextArea.append(message + "\n");
-        statusTextArea.setCaretPosition(statusTextArea.getDocument().getLength());
+    private void updateStatus(String status) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                statusTextArea.append(status + "\n");
+            }
+        });
+    }
+
+    private void createDeveloperInfoWindow() {
+        JFrame developerInfoFrame = new JFrame("Info");
+        developerInfoFrame.setSize(400, 200);
+        developerInfoFrame.setLocationRelativeTo(this);
+
+        JTextArea developerInfoTextArea = new JTextArea();
+
+        developerInfoTextArea.setEditable(false);
+        developerInfoTextArea.append("Email: switchconfigretriever@gmail.com\n");
+        developerInfoTextArea.append("Version: 0.1\n");
+        JScrollPane scrollPane = new JScrollPane(developerInfoTextArea);
+
+        developerInfoFrame.getContentPane().add(scrollPane);
+        developerInfoFrame.setVisible(true);
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new SwitchConfigRetriever().setVisible(true);
+                SwitchConfigRetriever switchConfigRetriever = new SwitchConfigRetriever();
+                switchConfigRetriever.setVisible(true);
             }
         });
     }
