@@ -1,3 +1,5 @@
+package org.example;
+
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
@@ -16,9 +18,17 @@ import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JSplitPane;
+import java.io.File;
+import java.io.FileOutputStream;
 import javax.swing.SwingUtilities;
 import org.apache.commons.net.telnet.TelnetClient;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import  java.awt.Robot;
+import java.awt.event.KeyEvent;
+import java.awt.AWTException;
 public class SwitchConfigRetriever extends JFrame {
     private JButton startButton;
     private JButton infoButton;
@@ -29,7 +39,7 @@ public class SwitchConfigRetriever extends JFrame {
     private JTextField loginField;
     private JPasswordField passwordField;
     private JTextArea terminalTextArea;
-    private JButton telnetButton;
+    private JButton terminalButton;
 
     public SwitchConfigRetriever() {
         super("Switch Config Retriever");
@@ -66,11 +76,11 @@ public class SwitchConfigRetriever extends JFrame {
             }
         });
 
-        telnetButton = new JButton("Telnet");
-        telnetButton.addActionListener(new ActionListener() {
+        terminalButton = new JButton("Terminal");
+        terminalButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                telnetToSwitchDialog();
+                openTerminal("cd /d C:/");
             }
         });
 
@@ -101,16 +111,26 @@ public class SwitchConfigRetriever extends JFrame {
         inputPanel.add(passwordField);
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(startButton);
-        buttonPanel.add(telnetButton);
+        buttonPanel.add(terminalButton);
         buttonPanel.add(infoButton);
         terminalTextArea = new JTextArea();
         terminalTextArea.setEditable(false);
         JScrollPane terminalScrollPane = new JScrollPane(terminalTextArea);
-        setLayout(new BorderLayout());
-        add(inputPanel, BorderLayout.NORTH);
-        add(scrollPane, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
-        add(terminalScrollPane, BorderLayout.EAST);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setResizeWeight(0.5);
+
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.add(inputPanel, BorderLayout.NORTH);
+        leftPanel.add(scrollPane, BorderLayout.CENTER);
+        splitPane.setLeftComponent(leftPanel);
+
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.add(buttonPanel, BorderLayout.NORTH);
+        rightPanel.add(terminalScrollPane, BorderLayout.CENTER);
+        splitPane.setRightComponent(rightPanel);
+
+        add(splitPane, BorderLayout.CENTER);
+
 
     }
 
@@ -128,6 +148,16 @@ public class SwitchConfigRetriever extends JFrame {
         String subnet = subnetField.getText();
         int startIP = Integer.parseInt(startIPField.getText());
         int endIP = Integer.parseInt(endIPField.getText());
+        String folderPath = "C:/SwitchConfigs/";
+        File folder = new File(folderPath);
+        if (!folder.exists()) {
+            if (folder.mkdir()) {
+                appendStatus("SwitchConfigs folder created");
+            } else {
+                appendStatus("Failed to create SwitchConfigs folder");
+                return;
+            }
+        }
 
         for (int i = startIP; i <= endIP; i++) {
             String ipAddress = subnet + "." + i;
@@ -135,14 +165,12 @@ public class SwitchConfigRetriever extends JFrame {
 
             try {
                 TelnetClient telnetClient = new TelnetClient();
-                telnetClient.setDefaultTimeout(1000);
+                telnetClient.setDefaultTimeout(3000);
                 telnetClient.connect(ipAddress, 23);
-
                 appendStatus("Connected to: " + ipAddress);
 
                 InputStream in = telnetClient.getInputStream();
                 OutputStream out = telnetClient.getOutputStream();
-
                 byte[] buff = new byte[1024];
                 int ret_read;
 
@@ -181,21 +209,26 @@ public class SwitchConfigRetriever extends JFrame {
                     appendTerminal(new String(buff, 0, ret_read));
                 }
 
-                out.write(("show running-config\r\n").getBytes());
+                out.write(("export\r\n").getBytes());
                 out.flush();
-                appendTerminal("show running-config");
+                appendTerminal("export");
 
                 ret_read = in.read(buff);
+                StringBuilder configBuilder = new StringBuilder();
                 while (ret_read >= 0) {
                     if (ret_read > 0) {
-                        appendTerminal(new String(buff, 0, ret_read));
+                        configBuilder.append(new String(buff, 0, ret_read));
                     }
                     ret_read = in.read(buff);
                 }
 
+                String config = configBuilder.toString();
+                String configFileName = ipAddress + ".txt";
+                String filePath = folderPath + configFileName;
+                saveConfigurationToFile(config, filePath);
+
                 telnetClient.disconnect();
                 appendStatus("Disconnected from: " + ipAddress);
-
             } catch (SocketException e) {
                 appendStatus("Connection failed: " + e.getMessage());
             } catch (IOException e) {
@@ -203,6 +236,30 @@ public class SwitchConfigRetriever extends JFrame {
             }
         }
     }
+    private void saveConfigurationToFile(String config, String ipAddress) {
+        try {
+            String filePath = ipAddress;
+            File file = new File(filePath);
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(config.getBytes());
+            fos.close();
+            appendStatus("Configuration saved to: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            appendStatus("Failed to save configuration: " + e.getMessage());
+        }
+    }
+
+    public static void openTerminal(String command) {
+        try {
+            // Создаем процесс, выполняющий команду открытия терминала с заданной командой
+            ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd", "/k", command);
+            processBuilder.inheritIO(); // Позволяет наследовать ввод/вывод с текущего Java процесса
+            processBuilder.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private void appendStatus(String message) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -212,6 +269,7 @@ public class SwitchConfigRetriever extends JFrame {
             }
         });
     }
+
 
     private void appendTerminal(String message) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -226,90 +284,4 @@ public class SwitchConfigRetriever extends JFrame {
         JOptionPane.showMessageDialog(this, "");
     }
 
-    private void telnetToSwitchDialog() {
-        String ipAddress = JOptionPane.showInputDialog(this, "Enter the IP address of the switch:");
-
-        if (ipAddress != null && !ipAddress.isEmpty()) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    telnetToSwitch(ipAddress);
-                }
-            }).start();
-        }
-    }
-
-    private void telnetToSwitch(String ipAddress) {
-        try {
-            TelnetClient telnetClient = new TelnetClient();
-            telnetClient.setDefaultTimeout(1000);
-            telnetClient.connect(ipAddress, 23);
-
-            appendStatus("Connected to: " + ipAddress);
-
-            InputStream in = telnetClient.getInputStream();
-            OutputStream out = telnetClient.getOutputStream();
-
-            byte[] buff = new byte[1024];
-            int ret_read;
-
-            String login = loginField.getText();
-            String password = new String(passwordField.getPassword());
-
-            ret_read = in.read(buff);
-            if (ret_read > 0) {
-                appendTerminal(new String(buff, 0, ret_read));
-            }
-
-            out.write((login + "\r\n").getBytes());
-            out.flush();
-            appendTerminal(login);
-
-            ret_read = in.read(buff);
-            if (ret_read > 0) {
-                appendTerminal(new String(buff, 0, ret_read));
-            }
-
-            out.write((password + "\r\n").getBytes());
-            out.flush();
-            appendTerminal(password);
-
-            ret_read = in.read(buff);
-            if (ret_read > 0) {
-                appendTerminal(new String(buff, 0, ret_read));
-            }
-
-            while (true) {
-                String command = JOptionPane.showInputDialog(this, "Enter a command (or 'exit' to exit):");
-
-                if (command != null && !command.isEmpty()) {
-                    if (command.equalsIgnoreCase("exit")) {
-                        break;
-                    } else {
-                        out.write((command + "\r\n").getBytes());
-                        out.flush();
-                        appendTerminal(command);
-
-                        ret_read = in.read(buff);
-                        while (ret_read >= 0) {
-                            if (ret_read > 0) {
-                                appendTerminal(new String(buff, 0, ret_read));
-                            }
-                            ret_read = in.read(buff);
-                        }
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            telnetClient.disconnect();
-            appendStatus("Disconnected from: " + ipAddress);
-
-        } catch (SocketException e) {
-            appendStatus("Connection failed: " + e.getMessage());
-        } catch (IOException e) {
-            appendStatus("IO error: " + e.getMessage());
-        }
-    }
 }
