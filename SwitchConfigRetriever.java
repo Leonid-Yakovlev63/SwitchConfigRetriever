@@ -1,38 +1,41 @@
-import org.snmp4j.CommunityTarget;
-import org.snmp4j.PDU;
-import org.snmp4j.Snmp;
-import org.snmp4j.Target;
-import org.snmp4j.event.ResponseEvent;
-import org.snmp4j.mp.SnmpConstants;
-import org.snmp4j.smi.Address;
-import org.snmp4j.smi.GenericAddress;
-import org.snmp4j.smi.OID;
-import org.snmp4j.smi.OctetString;
-import org.snmp4j.smi.VariableBinding;
-import org.snmp4j.transport.DefaultUdpTransportMapping;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.SocketException;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import org.apache.commons.net.telnet.TelnetClient;
 
 public class SwitchConfigRetriever extends JFrame {
     private JButton startButton;
-    private JButton developerInfoButton;
+    private JButton infoButton;
     private JTextArea statusTextArea;
     private JTextField subnetField;
     private JTextField startIPField;
     private JTextField endIPField;
-    private JTextField communityStringField;
+    private JTextField loginField;
+    private JPasswordField passwordField;
+    private JTextArea terminalTextArea;
+    private JButton telnetButton;
 
     public SwitchConfigRetriever() {
         super("Switch Config Retriever");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(500, 400);
+        setSize(700, 400);
         setLocationRelativeTo(null);
 
         startButton = new JButton("Start");
@@ -55,180 +58,60 @@ public class SwitchConfigRetriever extends JFrame {
             }
         });
 
-        developerInfoButton = new JButton("Info");
-        developerInfoButton.addActionListener(new ActionListener() {
+        infoButton = new JButton("Info");
+        infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                createDeveloperInfoWindow();
+                infoWindow();
             }
         });
+
+        telnetButton = new JButton("Telnet");
+        telnetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                telnetToSwitchDialog();
+            }
+        });
+
 
         statusTextArea = new JTextArea();
         statusTextArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(statusTextArea);
-
         subnetField = new JTextField("192.168.200");
         subnetField.setToolTipText("Enter the subnet");
         startIPField = new JTextField("1");
         startIPField.setToolTipText("Enter the starting IP address");
         endIPField = new JTextField("254");
         endIPField.setToolTipText("Enter the ending IP address");
-        communityStringField = new JTextField("public");
-        communityStringField.setToolTipText("Enter the community string");
-
-        JPanel inputPanel = new JPanel(new GridLayout(4, 2));
+        loginField = new JTextField("admin");
+        loginField.setToolTipText("Enter the login");
+        passwordField = new JPasswordField("QWEqwe12345");
+        passwordField.setToolTipText("Enter the password");
+        JPanel inputPanel = new JPanel(new GridLayout(5, 2));
         inputPanel.add(new JLabel("Subnet:"));
         inputPanel.add(subnetField);
         inputPanel.add(new JLabel("Start IP:"));
         inputPanel.add(startIPField);
         inputPanel.add(new JLabel("End IP:"));
         inputPanel.add(endIPField);
-        inputPanel.add(new JLabel("Community String:"));
-        inputPanel.add(communityStringField);
-
+        inputPanel.add(new JLabel("Login:"));
+        inputPanel.add(loginField);
+        inputPanel.add(new JLabel("Password:"));
+        inputPanel.add(passwordField);
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(startButton);
-        buttonPanel.add(developerInfoButton);
-
+        buttonPanel.add(telnetButton);
+        buttonPanel.add(infoButton);
+        terminalTextArea = new JTextArea();
+        terminalTextArea.setEditable(false);
+        JScrollPane terminalScrollPane = new JScrollPane(terminalTextArea);
         setLayout(new BorderLayout());
         add(inputPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
-    }
+        add(terminalScrollPane, BorderLayout.EAST);
 
-    private void retrieveSwitchConfigs() {
-        String saveDirectory = "C:\\SwitchConfigs";
-        String subnet = subnetField.getText();
-        int startIP = Integer.parseInt(startIPField.getText());
-        int endIP = Integer.parseInt(endIPField.getText());
-        String communityString = communityStringField.getText();
-        Snmp snmp;
-        try {
-            snmp = new Snmp(new DefaultUdpTransportMapping());
-            snmp.listen();
-        } catch (IOException e) {
-            updateStatus("Failed to initialize SNMP agent: " + e.getMessage());
-            return;
-        }
-        createManufacturerDirectories(saveDirectory);
-        for (int i = startIP; i <= endIP; i++) {
-            String ipAddress = subnet + "." + i;
-            updateStatus("Scanning switch: " + ipAddress);
-            try {
-                Address targetAddress = GenericAddress.parse("udp:" + ipAddress + "/161");
-                CommunityTarget target = new CommunityTarget();
-                target.setAddress(targetAddress);
-                target.setCommunity(new OctetString(communityString));
-                target.setVersion(SnmpConstants.version2c);
-                PDU sysInfoPDU = new PDU();
-                sysInfoPDU.add(new VariableBinding(new OID("1.3.6.1.2.1.1.2.0")));
-                sysInfoPDU.setType(PDU.GET);
-                ResponseEvent sysInfoResponseEvent = snmp.send(sysInfoPDU, target);
-                PDU sysInfoResponsePDU = sysInfoResponseEvent.getResponse();
-                if (sysInfoResponsePDU != null && sysInfoResponsePDU.getErrorStatus() == PDU.noError) {
-                    String manufacturer = sysInfoResponsePDU.get(0).getVariable().toString();
-                    String configOID = getConfigOID(manufacturer);
-                    if (configOID != null) {
-                        String manufacturerDirectory = getManufacturerDirectory(saveDirectory, manufacturer);
-                        PDU configPDU = new PDU();
-                        configPDU.add(new VariableBinding(new OID(configOID)));
-                        configPDU.setType(PDU.GET);
-                        ResponseEvent configResponseEvent = snmp.send(configPDU, target);
-                        PDU configResponsePDU = configResponseEvent.getResponse();
-                        if (configResponsePDU != null && configResponsePDU.getErrorStatus() == PDU.noError) {
-                            String config = configResponsePDU.get(0).getVariable().toString();
-                            String filename = "config_" + ipAddress + ".txt";
-                            File file = new File(manufacturerDirectory, filename);
-                            try (FileOutputStream fos = new FileOutputStream(file)) {
-                                fos.write(config.getBytes());
-                                updateStatus("Config saved for switch: " + ipAddress);
-                            } catch (IOException e) {
-                                updateStatus("Failed to save config for switch: " + ipAddress + " - " + e.getMessage());
-                            }
-                        } else {
-                            // Попытка использовать общий OID
-                            String generalConfigOID = "1.3.6.1.2.1.25.3.5.1.4";
-                            PDU generalConfigPDU = new PDU();
-                            generalConfigPDU.add(new VariableBinding(new OID(generalConfigOID)));
-                            generalConfigPDU.setType(PDU.GET);
-                            ResponseEvent generalConfigResponseEvent = snmp.send(generalConfigPDU, target);
-                            PDU generalConfigResponsePDU = generalConfigResponseEvent.getResponse();
-                            if (generalConfigResponsePDU != null && generalConfigResponsePDU.getErrorStatus() == PDU.noError) {
-                                String config = generalConfigResponsePDU.get(0).getVariable().toString();
-                                String filename = "config_" + ipAddress + ".txt";
-                                File file = new File(manufacturerDirectory, filename);
-                                try (FileOutputStream fos = new FileOutputStream(file)) {
-                                    fos.write(config.getBytes());
-                                    updateStatus("Config saved for switch: " + ipAddress);
-                                } catch (IOException ex) {
-                                    updateStatus("Failed to save config for switch: " + ipAddress + " - " + ex.getMessage());
-                                }
-                            } else {
-                                updateStatus("Failed to retrieve config for switch: " + ipAddress);
-                            }
-                        }
-                    } else {
-                        updateStatus("Unsupported switch manufacturer: " + manufacturer);
-                    }
-                } else {
-                    updateStatus("Failed to retrieve sysInfo for switch: " + ipAddress);
-                }
-            } catch (IOException ex) {
-                updateStatus("Failed to communicate with switch: " + ipAddress + " - " + ex.getMessage());
-            }
-        }
-        updateStatus("Switch config retrieval completed.");
-    }
-
-    private void createManufacturerDirectories(String saveDirectory) {
-        File directory = new File(saveDirectory);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-    }
-
-    private String getManufacturerDirectory(String saveDirectory, String manufacturer) {
-        String manufacturerDirectory = saveDirectory + File.separator + manufacturer;
-        File directory = new File(manufacturerDirectory);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-        return manufacturerDirectory;
-    }
-
-    private String getConfigOID(String manufacturer) {
-        if (manufacturer.equals("Cisco")) {
-            return "1.3.6.1.4.1.9.9.43.1.1.1.0";
-        } else if (manufacturer.equals("Juniper")) {
-            return "1.3.6.1.4.1.2636.3.1.13.1.8";
-        } else {
-            return null;
-        }
-    }
-
-    private void updateStatus(String status) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                statusTextArea.append(status + "\n");
-            }
-        });
-    }
-
-    private void createDeveloperInfoWindow() {
-        JFrame developerInfoFrame = new JFrame("Info");
-        developerInfoFrame.setSize(400, 200);
-        developerInfoFrame.setLocationRelativeTo(this);
-
-        JTextArea developerInfoTextArea = new JTextArea();
-
-        developerInfoTextArea.setEditable(false);
-        developerInfoTextArea.append("Email: switchconfigretriever@gmail.com\n");
-        developerInfoTextArea.append("Version: 0.1\n");
-        JScrollPane scrollPane = new JScrollPane(developerInfoTextArea);
-
-        developerInfoFrame.getContentPane().add(scrollPane);
-        developerInfoFrame.setVisible(true);
     }
 
     public static void main(String[] args) {
@@ -239,5 +122,194 @@ public class SwitchConfigRetriever extends JFrame {
                 switchConfigRetriever.setVisible(true);
             }
         });
+    }
+
+    private void retrieveSwitchConfigs() {
+        String subnet = subnetField.getText();
+        int startIP = Integer.parseInt(startIPField.getText());
+        int endIP = Integer.parseInt(endIPField.getText());
+
+        for (int i = startIP; i <= endIP; i++) {
+            String ipAddress = subnet + "." + i;
+            appendStatus("Checking: " + ipAddress);
+
+            try {
+                TelnetClient telnetClient = new TelnetClient();
+                telnetClient.setDefaultTimeout(1000);
+                telnetClient.connect(ipAddress, 23);
+
+                appendStatus("Connected to: " + ipAddress);
+
+                InputStream in = telnetClient.getInputStream();
+                OutputStream out = telnetClient.getOutputStream();
+
+                byte[] buff = new byte[1024];
+                int ret_read;
+
+                String login = loginField.getText();
+                String password = new String(passwordField.getPassword());
+
+                ret_read = in.read(buff);
+                if (ret_read > 0) {
+                    appendTerminal(new String(buff, 0, ret_read));
+                }
+
+                out.write((login + "\r\n").getBytes());
+                out.flush();
+                appendTerminal(login);
+
+                ret_read = in.read(buff);
+                if (ret_read > 0) {
+                    appendTerminal(new String(buff, 0, ret_read));
+                }
+
+                out.write((password + "\r\n").getBytes());
+                out.flush();
+                appendTerminal(password);
+
+                ret_read = in.read(buff);
+                if (ret_read > 0) {
+                    appendTerminal(new String(buff, 0, ret_read));
+                }
+
+                out.write(("terminal length 0\r\n").getBytes());
+                out.flush();
+                appendTerminal("terminal length 0");
+
+                ret_read = in.read(buff);
+                if (ret_read > 0) {
+                    appendTerminal(new String(buff, 0, ret_read));
+                }
+
+                out.write(("show running-config\r\n").getBytes());
+                out.flush();
+                appendTerminal("show running-config");
+
+                ret_read = in.read(buff);
+                while (ret_read >= 0) {
+                    if (ret_read > 0) {
+                        appendTerminal(new String(buff, 0, ret_read));
+                    }
+                    ret_read = in.read(buff);
+                }
+
+                telnetClient.disconnect();
+                appendStatus("Disconnected from: " + ipAddress);
+
+            } catch (SocketException e) {
+                appendStatus("Connection failed: " + e.getMessage());
+            } catch (IOException e) {
+                appendStatus("IO error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void appendStatus(String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                statusTextArea.append(message + "\n");
+            }
+        });
+    }
+
+    private void appendTerminal(String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                terminalTextArea.append(message);
+            }
+        });
+    }
+
+    private void infoWindow() {
+        JOptionPane.showMessageDialog(this, "");
+    }
+
+    private void telnetToSwitchDialog() {
+        String ipAddress = JOptionPane.showInputDialog(this, "Enter the IP address of the switch:");
+
+        if (ipAddress != null && !ipAddress.isEmpty()) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    telnetToSwitch(ipAddress);
+                }
+            }).start();
+        }
+    }
+
+    private void telnetToSwitch(String ipAddress) {
+        try {
+            TelnetClient telnetClient = new TelnetClient();
+            telnetClient.setDefaultTimeout(1000);
+            telnetClient.connect(ipAddress, 23);
+
+            appendStatus("Connected to: " + ipAddress);
+
+            InputStream in = telnetClient.getInputStream();
+            OutputStream out = telnetClient.getOutputStream();
+
+            byte[] buff = new byte[1024];
+            int ret_read;
+
+            String login = loginField.getText();
+            String password = new String(passwordField.getPassword());
+
+            ret_read = in.read(buff);
+            if (ret_read > 0) {
+                appendTerminal(new String(buff, 0, ret_read));
+            }
+
+            out.write((login + "\r\n").getBytes());
+            out.flush();
+            appendTerminal(login);
+
+            ret_read = in.read(buff);
+            if (ret_read > 0) {
+                appendTerminal(new String(buff, 0, ret_read));
+            }
+
+            out.write((password + "\r\n").getBytes());
+            out.flush();
+            appendTerminal(password);
+
+            ret_read = in.read(buff);
+            if (ret_read > 0) {
+                appendTerminal(new String(buff, 0, ret_read));
+            }
+
+            while (true) {
+                String command = JOptionPane.showInputDialog(this, "Enter a command (or 'exit' to exit):");
+
+                if (command != null && !command.isEmpty()) {
+                    if (command.equalsIgnoreCase("exit")) {
+                        break;
+                    } else {
+                        out.write((command + "\r\n").getBytes());
+                        out.flush();
+                        appendTerminal(command);
+
+                        ret_read = in.read(buff);
+                        while (ret_read >= 0) {
+                            if (ret_read > 0) {
+                                appendTerminal(new String(buff, 0, ret_read));
+                            }
+                            ret_read = in.read(buff);
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            telnetClient.disconnect();
+            appendStatus("Disconnected from: " + ipAddress);
+
+        } catch (SocketException e) {
+            appendStatus("Connection failed: " + e.getMessage());
+        } catch (IOException e) {
+            appendStatus("IO error: " + e.getMessage());
+        }
     }
 }
