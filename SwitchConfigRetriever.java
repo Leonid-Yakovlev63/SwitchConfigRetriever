@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.SocketException;
+import java.util.HashMap;
 public class SwitchConfigRetriever extends JFrame {
     private JButton startButton;
     private JButton infoButton;
@@ -51,9 +52,10 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow();
+                infoWindow("Programm didn't work(");
             }
         });
+
 
         terminalButton = new JButton("Terminal");
         terminalButton.addActionListener(new ActionListener() {
@@ -124,6 +126,18 @@ public class SwitchConfigRetriever extends JFrame {
     }
 
     private void retrieveSwitchConfigs() {
+
+
+        /*
+        * Мапа для подбора команд (пока не подключена)
+        * Нужно реализовать алгоритм получения производителя и на основе этого подбирать команду
+        * */
+        HashMap <String, String> configMap = new HashMap<>();
+        configMap.put("Cisco", "show running-config");
+        configMap.put("d-link", "show config current_config");
+        configMap.put("juniper", "show configuration ");
+
+
         String subnet = subnetField.getText();
         int startIP = Integer.parseInt(startIPField.getText());
         int endIP = Integer.parseInt(endIPField.getText());
@@ -273,11 +287,8 @@ public class SwitchConfigRetriever extends JFrame {
         });
     }
 
-    private void infoWindow() {
-        JOptionPane.showMessageDialog(this, "");
+    private void infoWindow(String message) {
+        JOptionPane.showMessageDialog(this, message);
     }
 
 }
-/*
-*
-* */
