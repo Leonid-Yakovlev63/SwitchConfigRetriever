@@ -1,34 +1,13 @@
 package org.example;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import org.apache.commons.net.telnet.TelnetClient;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.SocketException;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JSplitPane;
-import java.io.File;
-import java.io.FileOutputStream;
-import javax.swing.SwingUtilities;
-import org.apache.commons.net.telnet.TelnetClient;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import  java.awt.Robot;
-import java.awt.event.KeyEvent;
-import java.awt.AWTException;
 public class SwitchConfigRetriever extends JFrame {
     private JButton startButton;
     private JButton infoButton;
@@ -165,27 +144,37 @@ public class SwitchConfigRetriever extends JFrame {
 
             try {
                 TelnetClient telnetClient = new TelnetClient();
-                telnetClient.setDefaultTimeout(3000);
+                telnetClient.setDefaultTimeout(1500);
                 telnetClient.connect(ipAddress, 23);
                 appendStatus("Connected to: " + ipAddress);
 
-                InputStream in = telnetClient.getInputStream();
-                OutputStream out = telnetClient.getOutputStream();
+                InputStream in = telnetClient.getInputStream(); /* Потоковая штука */
+                OutputStream out = telnetClient.getOutputStream(); /* Ждать пока коммутатор что-то отправит, добавить буфер */
                 byte[] buff = new byte[1024];
                 int ret_read;
 
-                String login = loginField.getText();
+                String login = loginField.getText(); /*Вывести в константу*/
                 String password = new String(passwordField.getPassword());
+                try {
+                    Thread.sleep(500);  /*Даём потоку подождать*/
+                } catch (InterruptedException e) {
 
+                }
                 ret_read = in.read(buff);
+
                 if (ret_read > 0) {
                     appendTerminal(new String(buff, 0, ret_read));
                 }
 
+
                 out.write((login + "\r\n").getBytes());
                 out.flush();
                 appendTerminal(login);
+                try {
+                    Thread.sleep(500);  /*Даём потоку подождать*/
+                } catch (InterruptedException e) {
 
+                }
                 ret_read = in.read(buff);
                 if (ret_read > 0) {
                     appendTerminal(new String(buff, 0, ret_read));
@@ -200,18 +189,22 @@ public class SwitchConfigRetriever extends JFrame {
                     appendTerminal(new String(buff, 0, ret_read));
                 }
 
-                out.write(("terminal length 0\r\n").getBytes());
+                out.write(("\r\n").getBytes());
                 out.flush();
-                appendTerminal("terminal length 0");
+                appendTerminal("");
 
                 ret_read = in.read(buff);
                 if (ret_read > 0) {
                     appendTerminal(new String(buff, 0, ret_read));
                 }
+                try {
+                    Thread.sleep(1500);  /*Даём потоку подождать*/
+                } catch (InterruptedException e) {
 
-                out.write(("export\r\n").getBytes());
+                }
+                out.write(("show config current_config\r\n").getBytes());
                 out.flush();
-                appendTerminal("export");
+                appendTerminal("show config current_config");
 
                 ret_read = in.read(buff);
                 StringBuilder configBuilder = new StringBuilder();
@@ -285,3 +278,6 @@ public class SwitchConfigRetriever extends JFrame {
     }
 
 }
+/*
+*
+* */
