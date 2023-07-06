@@ -1,0 +1,9 @@
+                    DGS-3120-24SC Gigabit Ethernet Switch
+                            Command Line Interface
+
+                          Firmware: Build 4.19.R005
+           Copyright(C) 2017 D-Link Corporation. All rights reserved.
+UserName:
+PassWord:***********
+Fail!
+UserName:
