@@ -1,6 +1,8 @@
 package org.example;
 
 import org.apache.commons.net.telnet.TelnetClient;
+import org.apache.commons.net.tftp.TFTP;
+import org.apache.commons.net.tftp.TFTPClient;
 
 import javax.swing.*;
 import javax.swing.text.PlainDocument;
@@ -10,10 +12,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.SocketException;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.net.tftp.TFTP;
-import org.apache.commons.net.tftp.TFTPClient;
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
@@ -22,12 +21,10 @@ import org.snmp4j.event.ResponseEvent;
 import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.Address;
 import org.snmp4j.smi.GenericAddress;
-import org.snmp4j.smi.Integer32;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
-
 
 public class SwitchConfigRetriever extends JFrame {
     private JButton startButton;
@@ -168,13 +165,14 @@ public class SwitchConfigRetriever extends JFrame {
     private String getSwitchManufacturer(String ipAddress) throws IOException {
         String community = "public"; // SNMP community
         String oidSysDescr = "1.3.6.1.2.1.1.1.0"; // OID для sysDescr.0
+        String manufacturer = "unknown";
 
         TransportMapping<? extends Address> transport = new DefaultUdpTransportMapping();
         Snmp snmp = new Snmp(transport);
         transport.listen();
 
         Address targetAddress = GenericAddress.parse("udp:" + ipAddress + "/161");
-        CommunityTarget target = new CommunityTarget();
+        CommunityTarget<Address> target = new CommunityTarget<Address>();
         target.setCommunity(new OctetString(community));
         target.setAddress(targetAddress);
         target.setVersion(SnmpConstants.version2c);
@@ -183,7 +181,7 @@ public class SwitchConfigRetriever extends JFrame {
         pdu.add(new VariableBinding(new OID(oidSysDescr)));
         pdu.setType(PDU.GET);
 
-        ResponseEvent event = snmp.send(pdu, target, null);
+        ResponseEvent<Address> event = snmp.send(pdu, target, null);
         if (event != null && event.getResponse() != null) {
             PDU response = event.getResponse();
             if (response.getErrorStatus() == PDU.noError) {
@@ -192,17 +190,22 @@ public class SwitchConfigRetriever extends JFrame {
 
                 // Анализируем описание и возвращаем производителя
                 if (sysDescr.contains("Cisco")) {
-                    return "Cisco";
-                } else if (sysDescr.contains("D-Link")) {
-                    return "D-Link";
-                } else if (sysDescr.contains("Juniper")) {
-                    return "Juniper";
-                } else if (sysDescr.contains("MikroTik")) {
-                    return "MikroTik";
+                    manufacturer = "Cisco";
+                } 
+                else if (sysDescr.contains("D-Link")) {
+                    manufacturer = "D-Link";
+                } 
+                else if (sysDescr.contains("Juniper")) {
+                    manufacturer = "Juniper";
+                }
+                else if (sysDescr.contains("MikroTik")) {
+                    manufacturer = "MikroTik";
                 }
             }
         }
-        return "unknown";
+
+        snmp.close();
+        return manufacturer;
     }
 
     private void retrieveSwitchConfigs() throws InterruptedException {
@@ -213,8 +216,7 @@ public class SwitchConfigRetriever extends JFrame {
         configMap.put("MikroTik", "/export compact"); // 200.103 для Eltex TFTP для Dlink
         configMap.put("unknown", "show current_config"); // 90% коммутаторов в сети это D-Link
 
-        String folderPath = "C:/SwitchConfigs/";
-        File folder = new File(folderPath);
+        File folder = new File(this.folderPath);
         if (!folder.exists()) {
             if (folder.mkdir()) {
                 appendStatus("SwitchConfigs folder created");
@@ -336,7 +338,7 @@ public class SwitchConfigRetriever extends JFrame {
                     }
 
                     String config = configBuilder.toString();
-                    String configFileName = deviceName + ".txt";
+                    // String configFileName = deviceName + ".txt";
                     String filePath = manufacturerFolderPath + "/" + ipAddress + ".txt";
                     saveConfigurationToFile(config, filePath);
                 }
@@ -357,13 +359,14 @@ public class SwitchConfigRetriever extends JFrame {
     private String getDeviceName(String ipAddress) throws IOException {
         String community = "public"; // SNMP community
         String oidSysName = "1.3.6.1.2.1.1.5.0"; // OID для sysName.0
+        String sysName = "unknown";
 
         TransportMapping<? extends Address> transport = new DefaultUdpTransportMapping();
         Snmp snmp = new Snmp(transport);
         transport.listen();
 
         Address targetAddress = GenericAddress.parse("udp:" + ipAddress + "/161");
-        CommunityTarget target = new CommunityTarget();
+        CommunityTarget<Address> target = new CommunityTarget<Address>();
         target.setCommunity(new OctetString(community));
         target.setAddress(targetAddress);
         target.setVersion(SnmpConstants.version2c);
@@ -372,16 +375,16 @@ public class SwitchConfigRetriever extends JFrame {
         pdu.add(new VariableBinding(new OID(oidSysName)));
         pdu.setType(PDU.GET);
 
-        ResponseEvent event = snmp.send(pdu, target, null);
+        ResponseEvent<Address> event = snmp.send(pdu, target, null);
         if (event != null && event.getResponse() != null) {
             PDU response = event.getResponse();
             if (response.getErrorStatus() == PDU.noError) {
                 VariableBinding vb = response.getVariableBindings().get(0);
-                String sysName = vb.getVariable().toString();
-                return sysName;
+                sysName = vb.getVariable().toString();
             }
         }
-        return "unknown";
+        snmp.close();
+        return sysName;
     }
 
     private void TFTPmethod() throws InterruptedException { //аналог retrieveSwitchConfigs() (пока не используется)

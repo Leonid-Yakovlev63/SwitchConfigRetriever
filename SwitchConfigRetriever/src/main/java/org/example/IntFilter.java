@@ -13,7 +13,6 @@ public class IntFilter extends DocumentFilter {
     }
 
     public void insertString(DocumentFilter.FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
-        System.out.println("insertString");
         Document doc = fb.getDocument();
         StringBuilder sb = new StringBuilder();
         sb.append(doc.getText(0, doc.getLength()));
@@ -25,21 +24,13 @@ public class IntFilter extends DocumentFilter {
     }
 
     private boolean test(String text) {
-        char[] var2 = text.toCharArray();
-        int var3 = var2.length;
-
-        for(int var4 = 0; var4 < var3; ++var4) {
-            char c = var2[var4];
-            if (!Character.isDigit(c) && this.allowDot && c != '.') {
-                return false;
-            }
+        for (char c : text.toCharArray()) {
+            if (!(Character.isDigit(c) || (this.allowDot && c == '.'))) return false;
         }
-
         return true;
     }
 
     public void replace(DocumentFilter.FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
-        System.out.println("replace");
         Document doc = fb.getDocument();
         StringBuilder sb = new StringBuilder();
         sb.append(doc.getText(0, doc.getLength()));
@@ -51,7 +42,6 @@ public class IntFilter extends DocumentFilter {
     }
 
     public void remove(DocumentFilter.FilterBypass fb, int offset, int length) throws BadLocationException {
-        System.out.println("remove");
         Document doc = fb.getDocument();
         StringBuilder sb = new StringBuilder();
         sb.append(doc.getText(0, doc.getLength()));

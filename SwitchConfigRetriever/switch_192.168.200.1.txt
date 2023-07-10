@@ -1,5 +1,0 @@
-
-ex4500mirs.midnet.tv (ttyp0)
-
-
-login: login: Password:
