@@ -346,7 +346,7 @@ public class SwitchConfigRetriever extends JFrame {
                 return sysName;
             }
         }
-        return "Unknown";
+        return "unknown";
     }
 
     private void TFTPmethod() throws InterruptedException { //аналог retrieveSwitchConfigs() (пока не используется)
