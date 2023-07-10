@@ -3,6 +3,7 @@ package org.example;
 import org.apache.commons.net.telnet.TelnetClient;
 
 import javax.swing.*;
+import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,7 +40,8 @@ public class SwitchConfigRetriever extends JFrame {
     private JPasswordField passwordField;
     private JTextArea terminalTextArea;
     private JButton terminalButton;
-
+    private String folderPath = "C:/SwitchConfigs/";
+    private volatile boolean isRunning = false;
     public SwitchConfigRetriever() {
         super("Switch Config Retriever");
 
@@ -51,23 +53,36 @@ public class SwitchConfigRetriever extends JFrame {
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                startButton.setEnabled(false);
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            retrieveSwitchConfigs();
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                startButton.setEnabled(true);
+                if (!isRunning) {
+                    isRunning = true;
+                    startButton.setText("Stop");
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                retrieveSwitchConfigs();
+                            } catch (InterruptedException ex) {
+                                throw new RuntimeException(ex);
                             }
-                        });
-                    }
-                }).start();
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (isRunning) {
+                                        isRunning = false;
+                                        startButton.setText("Start");
+                                    }
+                                }
+                            });
+                        }
+                    }).start();
+                }
+                else {
+                    isRunning = false;
+                    startButton.setEnabled(false);
+                    startButton.setText("Start");
+                    appendStatus("Waiting for check to finish...");
+                }
             }
         });
 
@@ -75,7 +90,7 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow("Program didn't work(");
+                infoWindow("Абоба");
             }
         });
 
@@ -87,20 +102,32 @@ public class SwitchConfigRetriever extends JFrame {
             }
         });
 
+
         statusTextArea = new JTextArea();
         statusTextArea.setEditable(false);
+
         JScrollPane scrollPane = new JScrollPane(statusTextArea);
-        subnetField = new JTextField("192.168.200");
+
+        subnetField = new JTextField("192.168.200"); //"192.168.200"
+        ((PlainDocument) subnetField.getDocument()).setDocumentFilter(new IntFilter(true));
         subnetField.setToolTipText("Enter the subnet");
+
         startIPField = new JTextField("1");
+        ((PlainDocument) startIPField.getDocument()).setDocumentFilter(new IntFilter(false));
         startIPField.setToolTipText("Enter the starting IP address");
+
         endIPField = new JTextField("254");
+        ((PlainDocument) endIPField.getDocument()).setDocumentFilter(new IntFilter(false));
         endIPField.setToolTipText("Enter the ending IP address");
+
         loginField = new JTextField("admin");
         loginField.setToolTipText("Enter the login");
+
         passwordField = new JPasswordField("QWEqwe12345");
         passwordField.setToolTipText("Enter the password");
+
         JPanel inputPanel = new JPanel(new GridLayout(5, 2));
+
         inputPanel.add(new JLabel("Subnet:"));
         inputPanel.add(subnetField);
         inputPanel.add(new JLabel("Start IP:"));
@@ -111,13 +138,17 @@ public class SwitchConfigRetriever extends JFrame {
         inputPanel.add(loginField);
         inputPanel.add(new JLabel("Password:"));
         inputPanel.add(passwordField);
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(startButton);
         buttonPanel.add(terminalButton);
         buttonPanel.add(infoButton);
+
         terminalTextArea = new JTextArea();
         terminalTextArea.setEditable(false);
+
         JScrollPane terminalScrollPane = new JScrollPane(terminalTextArea);
+
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setResizeWeight(0.5);
 
