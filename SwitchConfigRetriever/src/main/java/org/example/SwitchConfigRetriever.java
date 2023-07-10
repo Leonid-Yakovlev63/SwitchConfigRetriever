@@ -10,6 +10,9 @@ import java.io.*;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.net.tftp.TFTP;
+import org.apache.commons.net.tftp.TFTPClient;
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
@@ -156,31 +159,29 @@ public class SwitchConfigRetriever extends JFrame {
                 VariableBinding vb = response.getVariableBindings().get(0);
                 String sysDescr = vb.getVariable().toString();
 
-                // Анализируйте описание и возвращайте производителя
+                // Анализируем описание и возвращаем производителя
                 if (sysDescr.contains("Cisco")) {
                     return "Cisco";
                 } else if (sysDescr.contains("D-Link")) {
                     return "D-Link";
                 } else if (sysDescr.contains("Juniper")) {
-                    return "juniper";
+                    return "Juniper";
+                } else if (sysDescr.contains("MikroTik")) {
+                    return "MikroTik";
                 }
             }
         }
-
-        return null; // Если не удалось получить производителя
+        return "unknown";
     }
 
     private void retrieveSwitchConfigs() throws InterruptedException {
         HashMap<String, String> configMap = new HashMap<>();
         configMap.put("Cisco", "show running-config");
         configMap.put("D-Link", "show config current_config");
-        configMap.put("juniper", "show configuration");
+        configMap.put("Juniper", "show configuration");
         configMap.put("MikroTik", "/export compact"); // 200.103 для Eltex TFTP для Dlink
-        configMap.put("unknown", "show current_config\n"); //90% коммутаторов в сети это D-Link
+        configMap.put("unknown", "show current_config"); // 90% коммутаторов в сети это D-Link
 
-        String subnet = subnetField.getText();
-        int startIP = Integer.parseInt(startIPField.getText());
-        int endIP = Integer.parseInt(endIPField.getText());
         String folderPath = "C:/SwitchConfigs/";
         File folder = new File(folderPath);
         if (!folder.exists()) {
@@ -192,28 +193,55 @@ public class SwitchConfigRetriever extends JFrame {
             }
         }
 
+        String subnet = subnetField.getText();
+        int startIP = Integer.parseInt(startIPField.getText());
+        int endIP = Integer.parseInt(endIPField.getText());
+        String login = loginField.getText();
+        String password = new String(passwordField.getPassword());
+
         for (int i = startIP; i <= endIP; i++) {
             String ipAddress = subnet + "." + i;
             appendStatus("Checking: " + ipAddress);
 
             try {
+                // Подключение по SNMP для получения производителя
+                String manufacturer = getSwitchManufacturer(ipAddress);
+
+                // Создание папки для производителя, если её нет
+                String manufacturerFolderPath = folderPath + manufacturer;
+                File manufacturerFolder = new File(manufacturerFolderPath);
+                if (!manufacturerFolder.exists()) {
+                    if (manufacturerFolder.mkdir()) {
+                        appendStatus("Created folder for manufacturer: " + manufacturer);
+                    } else {
+                        appendStatus("Failed to create folder for manufacturer: " + manufacturer);
+                        continue;
+                    }
+                }
+
+                // Получение имени устройства
+                String deviceName = getDeviceName(ipAddress);
+
+                // Формирование команды к коммутатору
+                String command;
+                if (configMap.containsKey(manufacturer)) {
+                    command = configMap.get(manufacturer);
+                } else {
+                    command = configMap.get("unknown");
+                }
+
                 TelnetClient telnetClient = new TelnetClient();
                 telnetClient.setDefaultTimeout(1500);
                 telnetClient.connect(ipAddress, 23);
                 appendStatus("Connected to: " + ipAddress);
 
-                InputStream in = telnetClient.getInputStream(); // Потоковая штука
-                OutputStream out = telnetClient.getOutputStream(); // Ждать пока коммутатор что-то отправит, добавить буфер
+                InputStream in = telnetClient.getInputStream();
+                OutputStream out = telnetClient.getOutputStream();
+                threadSleep();
                 byte[] buff = new byte[1024];
                 int ret_read;
 
-                String login = loginField.getText(); //Вывести в константу
-                String password = new String(passwordField.getPassword());
-                try {
-                    Thread.sleep(500);  //Даём потоку подождать
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                threadSleep();
                 ret_read = in.read(buff);
 
                 if (ret_read > 0) {
@@ -223,11 +251,7 @@ public class SwitchConfigRetriever extends JFrame {
                 PrintWriter writer = new PrintWriter(out, true);
 
                 writer.println(login);
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                threadSleep();
 
                 ret_read = in.read(buff);
                 if (ret_read > 0) {
@@ -235,11 +259,7 @@ public class SwitchConfigRetriever extends JFrame {
                 }
 
                 writer.println(password);
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                threadSleep();
 
                 ret_read = in.read(buff);
                 if (ret_read > 0) {
@@ -249,47 +269,46 @@ public class SwitchConfigRetriever extends JFrame {
                 out.write(("\r\n").getBytes());
                 out.flush();
 
-
                 ret_read = in.read(buff);
                 if (ret_read > 0) {
                     appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
                 }
 
-                try {
-                    Thread.sleep(1500);  //Даём потоку подождать
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                threadSleep();
 
-                String manufacturer = getSwitchManufacturer(ipAddress);
-                if (manufacturer != null && configMap.containsKey(manufacturer)) {
-                    String command = configMap.get(manufacturer);
-                    out.write((command + "\r\n").getBytes());
-                    out.flush();
-                    appendTerminal(command);
+                if (manufacturer != "unknown" && configMap.containsKey(manufacturer)) {
+                    // Используется TFTP для передачи конфигурации коммутатора
+                    TFTPClient tftpClient = new TFTPClient();
+                    tftpClient.setDefaultTimeout(5000); // Установка таймаута
+                    String configFileName = deviceName + ".txt";
+                    String filePath = manufacturerFolderPath + "/" + configFileName;
+                    FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+                    tftpClient.open();
+                    tftpClient.receiveFile("/config.cfg", TFTP.BINARY_MODE, fileOutputStream, ipAddress);
+                    fileOutputStream.close();
+                    tftpClient.close();
+                    appendStatus("Configuration saved for: " + ipAddress);
                 } else {
-                    String command = configMap.get("unknown");
                     out.write((command + "\r\n").getBytes());
                     out.flush();
                     appendTerminal(command);
-                };
 
-                out.flush();
+                    out.flush();
 
-
-                ret_read = in.read(buff);
-                StringBuilder configBuilder = new StringBuilder();
-                while (ret_read >= 0) {
-                    if (ret_read > 0) {
-                        configBuilder.append(new String(buff, 0, ret_read, "UTF-8"));
-                    }
                     ret_read = in.read(buff);
-                }
+                    StringBuilder configBuilder = new StringBuilder();
+                    while (ret_read >= 0) {
+                        if (ret_read > 0) {
+                            configBuilder.append(new String(buff, 0, ret_read, "UTF-8"));
+                        }
+                        ret_read = in.read(buff);
+                    }
 
-                String config = configBuilder.toString();
-                String configFileName = ipAddress + ".txt";
-                String filePath = folderPath + configFileName;
-                saveConfigurationToFile(config, filePath);
+                    String config = configBuilder.toString();
+                    String configFileName = deviceName + ".txt";
+                    String filePath = manufacturerFolderPath + "/" + ipAddress + ".txt";
+                    saveConfigurationToFile(config, filePath);
+                }
 
                 telnetClient.disconnect();
                 appendStatus("Disconnected from: " + ipAddress);
@@ -300,7 +319,68 @@ public class SwitchConfigRetriever extends JFrame {
             }
         }
     }
+    private String getDeviceName(String ipAddress) throws IOException {
+        String community = "public"; // SNMP community
+        String oidSysName = "1.3.6.1.2.1.1.5.0"; // OID для sysName.0
 
+        TransportMapping<? extends Address> transport = new DefaultUdpTransportMapping();
+        Snmp snmp = new Snmp(transport);
+        transport.listen();
+
+        Address targetAddress = GenericAddress.parse("udp:" + ipAddress + "/161");
+        CommunityTarget target = new CommunityTarget();
+        target.setCommunity(new OctetString(community));
+        target.setAddress(targetAddress);
+        target.setVersion(SnmpConstants.version2c);
+
+        PDU pdu = new PDU();
+        pdu.add(new VariableBinding(new OID(oidSysName)));
+        pdu.setType(PDU.GET);
+
+        ResponseEvent event = snmp.send(pdu, target, null);
+        if (event != null && event.getResponse() != null) {
+            PDU response = event.getResponse();
+            if (response.getErrorStatus() == PDU.noError) {
+                VariableBinding vb = response.getVariableBindings().get(0);
+                String sysName = vb.getVariable().toString();
+                return sysName;
+            }
+        }
+        return "Unknown";
+    }
+
+    private void TFTPmethod() throws InterruptedException { //аналог retrieveSwitchConfigs() (пока не используется)
+        String subnet = subnetField.getText();
+        int startIP = Integer.parseInt(startIPField.getText());
+        int endIP = Integer.parseInt(endIPField.getText());
+
+        for (int i = startIP; i <= endIP; i++) {
+            String ipAddress = subnet + "." + i;
+            appendStatus("Checking: " + ipAddress);
+
+            try {
+                TFTPClient tftpClient = new TFTPClient();
+
+                // Установка таймаута
+                tftpClient.setDefaultTimeout(5000);
+
+
+                String localFile = ipAddress + ".txt";
+                FileOutputStream fileOutputStream = new FileOutputStream(localFile);
+
+                // Получение конфигурации коммутатора по TFTP
+                tftpClient.open();
+                tftpClient.receiveFile("/config.cfg", TFTP.BINARY_MODE, fileOutputStream, ipAddress);
+                fileOutputStream.close();
+                tftpClient.close();
+
+                appendStatus("Configuration saved for: " + ipAddress);
+
+            } catch (IOException e) {
+                appendStatus("Failed to retrieve configuration for: " + ipAddress + " - " + e.getMessage());
+            }
+        }
+    }
     private void saveConfigurationToFile(String config, String filePath) {
         try (PrintWriter writer = new PrintWriter(filePath)) {
             writer.write(config);
@@ -310,7 +390,13 @@ public class SwitchConfigRetriever extends JFrame {
         }
     }
 
-
+    private void threadSleep(){
+        try {
+            Thread.sleep(500);  //Даём потоку подождать
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void openTerminal(String command) {
         try {
