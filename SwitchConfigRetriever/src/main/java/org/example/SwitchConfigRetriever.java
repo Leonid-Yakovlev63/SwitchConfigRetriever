@@ -230,7 +230,7 @@ public class SwitchConfigRetriever extends JFrame {
         String login = loginField.getText();
         String password = new String(passwordField.getPassword());
 
-        for (int i = startIP; i <= endIP; i++) {
+        for (int i = startIP; i <= endIP && isRunning; i++) {
             String ipAddress = subnet + "." + i;
             appendStatus("Checking: " + ipAddress);
 
@@ -347,6 +347,10 @@ public class SwitchConfigRetriever extends JFrame {
                 appendStatus("Connection failed: " + e.getMessage());
             } catch (IOException e) {
                 appendStatus("IO error: " + e.getMessage());
+            }
+            if (!isRunning){
+                startButton.setEnabled(true);
+                appendStatus("Stopped.");
             }
         }
     }
