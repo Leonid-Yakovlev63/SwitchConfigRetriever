@@ -1,11 +1,17 @@
-package org.example;
+package org.metamodernity;
+
+import org.metamodernity.filter.IntFilter;
 
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.tftp.TFTP;
 import org.apache.commons.net.tftp.TFTPClient;
 
+import org.json.simple.*;
+import org.json.simple.parser.JSONParser;
+
 import javax.swing.*;
 import javax.swing.text.PlainDocument;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,19 +33,25 @@ import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 public class SwitchConfigRetriever extends JFrame {
-    private JButton startButton;
-    private JButton infoButton;
     private JTextArea statusTextArea;
+    private JTextArea terminalTextArea;
     private JTextField subnetField;
     private JTextField startIPField;
     private JTextField endIPField;
     private JTextField loginField;
     private JPasswordField passwordField;
-    private JTextArea terminalTextArea;
+    private JButton startButton;
+    private JButton pauseButton;
+    private JButton infoButton;
     private JButton terminalButton;
+
+    private Thread retrieverThread;
+    private Thread controllerThread;
+    private HashMap<String, HashMap<String, String>> configMap = new HashMap<>();
     private String folderPath = "C:/SwitchConfigs/";
     private volatile boolean isRunning = false;
-    private HashMap<String, HashMap<String, String>> configMap; // Вынесем хэш таблицу в поле класса
+    private volatile boolean isPaused = false;
+
     public SwitchConfigRetriever() {
         super("Switch Config Retriever");
 
@@ -54,8 +66,9 @@ public class SwitchConfigRetriever extends JFrame {
                 if (!isRunning) {
                     isRunning = true;
                     startButton.setText("Stop");
+                    pauseButton.setVisible(true);
 
-                    new Thread(new Runnable() {
+                    retrieverThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -68,21 +81,55 @@ public class SwitchConfigRetriever extends JFrame {
                                 public void run() {
                                     if (isRunning) {
                                         isRunning = false;
+                                        isPaused = false;
                                         startButton.setText("Start");
+                                        pauseButton.setVisible(false);
                                     }
                                 }
                             });
                         }
-                    }).start();
+                    });
+
+                    controllerThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            retrieverThread.start();
+                        }
+                    });
+
+                    controllerThread.start();
                 }
                 else {
                     isRunning = false;
+                    isPaused = false;
                     startButton.setEnabled(false);
                     startButton.setText("Start");
+                    pauseButton.setVisible(false);
                     appendStatus("Waiting for check to finish...");
                 }
             }
         });
+
+        pauseButton = new JButton("Pause");
+        pauseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isRunning) {
+                    if (!isPaused) {
+                        isPaused = true;
+                        pauseButton.setEnabled(false);
+                        pauseButton.setText("Resume");
+                        appendStatus("Waiting for check to pause...");
+                    }
+                    else {
+                        isPaused = false;
+                        pauseButton.setText("Pause");
+                        appendStatus("Resumed");
+                    }
+                }
+            }
+        });
+        pauseButton.setVisible(false);
 
         infoButton = new JButton("Info");
         infoButton.addActionListener(new ActionListener() {
@@ -137,8 +184,12 @@ public class SwitchConfigRetriever extends JFrame {
         inputPanel.add(new JLabel("Password:"));
         inputPanel.add(passwordField);
 
+        JPanel controlButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        controlButtonPanel.add(startButton);
+        controlButtonPanel.add(pauseButton);
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.add(startButton);
+        buttonPanel.add(controlButtonPanel);
         buttonPanel.add(terminalButton);
         buttonPanel.add(infoButton);
 
@@ -162,9 +213,9 @@ public class SwitchConfigRetriever extends JFrame {
 
         add(splitPane, BorderLayout.CENTER);
 
-        configMap = new HashMap<>(); // Инициализируем хэш таблицу в конструкторе
         initializeConfigMap();
     }
+
     private void initializeConfigMap() {
 
         HashMap<String, String> dlinkDevices = new HashMap<>();
@@ -240,15 +291,19 @@ public class SwitchConfigRetriever extends JFrame {
         snmp.close();
         return manufacturer;
     }
+
     private String getCommand(String manufacturer, String deviceName) {
         HashMap<String, String> deviceMap = configMap.get(manufacturer);
+
         if (deviceMap != null) {
             String command = deviceMap.get(deviceName);
+
             if (command != null) {
                 return command;
             }
         }
-        return "show current_config"; // на случай если command равен null
+
+        return "show current_config";
     }
 
     private void retrieveSwitchConfigs() throws InterruptedException {
@@ -381,7 +436,14 @@ public class SwitchConfigRetriever extends JFrame {
             } catch (IOException e) {
                 appendStatus("IO error: " + e.getMessage());
             }
-            if (!isRunning) {
+
+            if (isPaused) {
+                pauseButton.setEnabled(true);
+                appendStatus("Paused.");
+                while(isPaused) {}
+            }
+
+            if (!isRunning){
                 startButton.setEnabled(true);
                 appendStatus("Stopped.");
             }
@@ -389,7 +451,7 @@ public class SwitchConfigRetriever extends JFrame {
     }
     private String getDeviceName(String ipAddress) throws IOException {
         String community = "public"; // SNMP community
-        String oidSysName = "1.3.6.1.2.1.1.5.0"; // OID для sysName.0
+        String oidSysName = ".1.3.6.1.2.1.1.5.0"; // OID для sysName.0
         String sysName = "unknown";
 
         TransportMapping<? extends Address> transport = new DefaultUdpTransportMapping();
@@ -505,6 +567,16 @@ public class SwitchConfigRetriever extends JFrame {
     }
 
     public static void main(String[] args) {
+
+        JSONParser parser = new JSONParser();
+
+        try {
+            JSONObject obj = (JSONObject)parser.parse(new FileReader(SwitchConfigRetriever.class.getClassLoader().getResource("commands.json").toURI().getPath()));
+            System.out.println(obj.toString());
+        }
+        catch (Exception e) {
+            System.out.println(e);
+        }
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
