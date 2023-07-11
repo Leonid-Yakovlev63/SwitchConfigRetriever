@@ -39,6 +39,7 @@ public class SwitchConfigRetriever extends JFrame {
     private JButton terminalButton;
     private String folderPath = "C:/SwitchConfigs/";
     private volatile boolean isRunning = false;
+    private HashMap<String, HashMap<String, String>> configMap; // Вынесем хэш таблицу в поле класса
     public SwitchConfigRetriever() {
         super("Switch Config Retriever");
 
@@ -160,7 +161,39 @@ public class SwitchConfigRetriever extends JFrame {
         splitPane.setRightComponent(rightPanel);
 
         add(splitPane, BorderLayout.CENTER);
+
+        configMap = new HashMap<>(); // Инициализируем хэш таблицу в конструкторе
+        initializeConfigMap();
     }
+    private void initializeConfigMap() {
+
+        HashMap<String, String> dlinkDevices = new HashMap<>();
+        dlinkDevices.put("DIS-100E-5W", "show config current_config");
+        dlinkDevices.put("DIS-100E-8W", "show config current_config");
+        dlinkDevices.put("DIS-100G-5PSW", "show config current_config");
+        dlinkDevices.put("DIS-100G-5SW", "show config current_config");
+        configMap.put("D-Link", dlinkDevices);
+
+        HashMap<String, String> juniperDevices = new HashMap<>();
+        juniperDevices.put("EX8200", "show configuration");
+        juniperDevices.put("EX3300", "show configuration");
+        juniperDevices.put("EX3200", "show configuration");
+        configMap.put("Juniper", juniperDevices);
+
+        HashMap<String, String> ciscoDevices = new HashMap<>();
+        ciscoDevices.put("EX8200", "show running-config");
+        ciscoDevices.put("EX3300", "show running-config");
+        ciscoDevices.put("EX3200", "show running-config");
+        configMap.put("Juniper", ciscoDevices);
+
+        HashMap<String, String> microTikDevices = new HashMap<>();
+        microTikDevices.put("CRS354-48P-4S+2Q+RM", "/export compact");
+        microTikDevices.put("CRS326-24G-2S+RM", "/export compact");
+        microTikDevices.put("US-24E", "/export compact");
+        configMap.put("MicroTik", microTikDevices);
+
+    }
+
     // Метод для получения производителя по SNMP
     private String getSwitchManufacturer(String ipAddress) throws IOException {
         String community = "public"; // SNMP community
@@ -207,15 +240,18 @@ public class SwitchConfigRetriever extends JFrame {
         snmp.close();
         return manufacturer;
     }
+    private String getCommand(String manufacturer, String deviceName) {
+        HashMap<String, String> deviceMap = configMap.get(manufacturer);
+        if (deviceMap != null) {
+            String command = deviceMap.get(deviceName);
+            if (command != null) {
+                return command;
+            }
+        }
+        return "show current_config"; // на случай если command равен null
+    }
 
     private void retrieveSwitchConfigs() throws InterruptedException {
-        HashMap<String, String> configMap = new HashMap<>();
-        configMap.put("Cisco", "show running-config");
-        configMap.put("D-Link", "show config current_config");
-        configMap.put("Juniper", "show configuration");
-        configMap.put("MikroTik", "/export compact"); // 200.103 для Eltex TFTP для Dlink
-        configMap.put("unknown", "show current_config"); // 90% коммутаторов в сети это D-Link
-
         File folder = new File(this.folderPath);
         if (!folder.exists()) {
             if (folder.mkdir()) {
@@ -256,12 +292,7 @@ public class SwitchConfigRetriever extends JFrame {
                 String deviceName = getDeviceName(ipAddress);
 
                 // Формирование команды к коммутатору
-                String command;
-                if (configMap.containsKey(manufacturer)) {
-                    command = configMap.get(manufacturer);
-                } else {
-                    command = configMap.get("unknown");
-                }
+                String command = getCommand(manufacturer, deviceName);
 
                 TelnetClient telnetClient = new TelnetClient();
                 telnetClient.setDefaultTimeout(1500);
@@ -350,7 +381,7 @@ public class SwitchConfigRetriever extends JFrame {
             } catch (IOException e) {
                 appendStatus("IO error: " + e.getMessage());
             }
-            if (!isRunning){
+            if (!isRunning) {
                 startButton.setEnabled(true);
                 appendStatus("Stopped.");
             }
