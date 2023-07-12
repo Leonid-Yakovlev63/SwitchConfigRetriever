@@ -219,14 +219,14 @@ public class SwitchConfigRetriever extends JFrame {
     private void initializeConfigMap() {
 
         HashMap<String, String> dlinkDevices = new HashMap<>();
-        dlinkDevices.put("DIS-100E-5W", "show config current_config");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.117.4.1", "show config current_config");
         dlinkDevices.put("DIS-100E-8W", "show config current_config");
         dlinkDevices.put("DIS-100G-5PSW", "show config current_config");
         dlinkDevices.put("DIS-100G-5SW", "show config current_config");
         configMap.put("D-Link", dlinkDevices);
 
         HashMap<String, String> juniperDevices = new HashMap<>();
-        juniperDevices.put("EX8200", "show configuration");
+        juniperDevices.put("1.3.6.1.4.1.2636.1.1.1.2.44", "show configuration");
         juniperDevices.put("EX3300", "show configuration");
         juniperDevices.put("EX3200", "show configuration");
         configMap.put("Juniper", juniperDevices);
@@ -298,11 +298,11 @@ public class SwitchConfigRetriever extends JFrame {
         return manufacturer;
     }
 
-    private String getCommand(String manufacturer, String deviceName) {
+    private String getCommand(String manufacturer, String sysObjectID) {
         HashMap<String, String> deviceMap = configMap.get(manufacturer);
 
         if (deviceMap != null) {
-            String command = deviceMap.get(deviceName);
+            String command = deviceMap.get(sysObjectID);
 
             if (command != null) {
                 return command;
@@ -328,8 +328,10 @@ public class SwitchConfigRetriever extends JFrame {
         int endIP = Integer.parseInt(endIPField.getText());
         String login = loginField.getText();
         String password = new String(passwordField.getPassword());
-
+        appendStatus("===========================");
         for (int i = startIP; i <= endIP && isRunning; i++) {
+            appendStatus("===========================");
+            appendStatus(String.valueOf(i) + ".");
             String ipAddress = subnet + "." + i;
             appendStatus("Checking: " + ipAddress);
 
@@ -354,16 +356,18 @@ public class SwitchConfigRetriever extends JFrame {
                 String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
                 String sysObjectID = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.2.0");
                 // Формирование команды к коммутатору
-                String command = getCommand(manufacturer, deviceName);
+                String command = getCommand(manufacturer, sysObjectID);
 
                 TelnetClient telnetClient = new TelnetClient();
                 telnetClient.setDefaultTimeout(1500);
                 telnetClient.connect(ipAddress, 23);
+
                 appendStatus("Connected to: " + ipAddress);
                 appendStatus("  Device name: " + deviceName);
                 appendStatus("  Manufacturer: " + manufacturer);
                 appendStatus("  sysName:" + sysName);
                 appendStatus("  sysObjectID:" + sysObjectID);
+
                 InputStream in = telnetClient.getInputStream();
                 OutputStream out = telnetClient.getOutputStream();
                 threadSleep();
@@ -457,6 +461,7 @@ public class SwitchConfigRetriever extends JFrame {
                 startButton.setEnabled(true);
                 appendStatus("Stopped.");
             }
+            appendStatus("===========================");
         }
     }
     
@@ -498,7 +503,6 @@ public class SwitchConfigRetriever extends JFrame {
         for (int i = startIP; i <= endIP; i++) {
             String ipAddress = subnet + "." + i;
             appendStatus("Checking: " + ipAddress);
-
             try {
                 TFTPClient tftpClient = new TFTPClient();
 
