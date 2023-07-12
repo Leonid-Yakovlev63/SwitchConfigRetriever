@@ -278,7 +278,13 @@ public class SwitchConfigRetriever extends JFrame {
                 } 
                 else if (sysDescr.contains("D-Link")) {
                     manufacturer = "D-Link";
-                } 
+                }
+                else if (sysDescr.contains("DES")) {
+                    manufacturer = "D-Link";
+                }
+                else if (sysDescr.contains("DGS")) {
+                    manufacturer = "D-Link";
+                }
                 else if (sysDescr.contains("Juniper")) {
                     manufacturer = "Juniper";
                 }
@@ -344,8 +350,9 @@ public class SwitchConfigRetriever extends JFrame {
                 }
 
                 // Получение имени устройства
-                String deviceName = getDeviceName(ipAddress);
-
+                String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
+                String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
+                String sysObjectID = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.2.0");
                 // Формирование команды к коммутатору
                 String command = getCommand(manufacturer, deviceName);
 
@@ -353,7 +360,10 @@ public class SwitchConfigRetriever extends JFrame {
                 telnetClient.setDefaultTimeout(1500);
                 telnetClient.connect(ipAddress, 23);
                 appendStatus("Connected to: " + ipAddress);
-
+                appendStatus("  Device name: " + deviceName);
+                appendStatus("  Manufacturer: " + manufacturer);
+                appendStatus("  sysName:" + sysName);
+                appendStatus("  sysObjectID:" + sysObjectID);
                 InputStream in = telnetClient.getInputStream();
                 OutputStream out = telnetClient.getOutputStream();
                 threadSleep();
@@ -449,9 +459,9 @@ public class SwitchConfigRetriever extends JFrame {
             }
         }
     }
-    private String getDeviceName(String ipAddress) throws IOException {
+    
+    private String getInfoBySNMP(String ipAddress, String oidSys) throws IOException {
         String community = "public"; // SNMP community
-        String oidSysName = ".1.3.6.1.2.1.1.5.0"; // OID для sysName.0
         String sysName = "unknown";
 
         TransportMapping<? extends Address> transport = new DefaultUdpTransportMapping();
@@ -465,7 +475,7 @@ public class SwitchConfigRetriever extends JFrame {
         target.setVersion(SnmpConstants.version2c);
 
         PDU pdu = new PDU();
-        pdu.add(new VariableBinding(new OID(oidSysName)));
+        pdu.add(new VariableBinding(new OID(oidSys)));
         pdu.setType(PDU.GET);
 
         ResponseEvent<Address> event = snmp.send(pdu, target, null);
