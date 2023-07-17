@@ -39,6 +39,8 @@ public class SwitchConfigRetriever extends JFrame {
     private JTextField startIPField;
     private JTextField endIPField;
     private JTextField loginField;
+
+    private JTextField TFTPserverIPField;
     private JPasswordField passwordField;
     private JButton startButton;
     private JButton pauseButton;
@@ -165,13 +167,16 @@ public class SwitchConfigRetriever extends JFrame {
         ((PlainDocument) endIPField.getDocument()).setDocumentFilter(new IntFilter(false));
         endIPField.setToolTipText("Enter the ending IP address");
 
+        TFTPserverIPField = new JTextField("192.168.1.195");
+        TFTPserverIPField.setToolTipText("Enter the IP address of TFTP server");
+
         loginField = new JTextField("admin");
         loginField.setToolTipText("Enter the login");
 
         passwordField = new JPasswordField("QWEqwe12345");
         passwordField.setToolTipText("Enter the password");
 
-        JPanel inputPanel = new JPanel(new GridLayout(5, 2));
+        JPanel inputPanel = new JPanel(new GridLayout(6, 2));
 
         inputPanel.add(new JLabel("Subnet:"));
         inputPanel.add(subnetField);
@@ -179,6 +184,8 @@ public class SwitchConfigRetriever extends JFrame {
         inputPanel.add(startIPField);
         inputPanel.add(new JLabel("End IP:"));
         inputPanel.add(endIPField);
+        inputPanel.add(new JLabel("TFTP server:"));
+        inputPanel.add(TFTPserverIPField);
         inputPanel.add(new JLabel("Login:"));
         inputPanel.add(loginField);
         inputPanel.add(new JLabel("Password:"));
@@ -219,29 +226,46 @@ public class SwitchConfigRetriever extends JFrame {
     private void initializeConfigMap() {
 
         HashMap<String, String> dlinkDevices = new HashMap<>();
-        dlinkDevices.put("1.3.6.1.4.1.171.10.117.4.1", "show config current_config");
-        dlinkDevices.put("DIS-100E-8W", "show config current_config");
-        dlinkDevices.put("DIS-100G-5PSW", "show config current_config");
-        dlinkDevices.put("DIS-100G-5SW", "show config current_config");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.117.4.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.44.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.14.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("11.3.6.1.4.1.171.10.75.14.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.133.5.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.18.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.32.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.134.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.5.2", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.116.2", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.153.4.1", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.3", "upload cfg_toTFTP %s %s.cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.2", "upload cfg_toTFTP %s %s.cfg");
         configMap.put("D-Link", dlinkDevices);
 
         HashMap<String, String> juniperDevices = new HashMap<>();
-        juniperDevices.put("1.3.6.1.4.1.2636.1.1.1.2.44", "show configuration");
-        juniperDevices.put("EX3300", "show configuration");
-        juniperDevices.put("EX3200", "show configuration");
+        juniperDevices.put("1.3.6.1.4.1.2636.1.1.1.2.44", "file copy /var/tmp/config.cfg tftp://%s/%s.cfg");
         configMap.put("Juniper", juniperDevices);
 
         HashMap<String, String> ciscoDevices = new HashMap<>();
         ciscoDevices.put("EX8200", "show running-config");
         ciscoDevices.put("EX3300", "show running-config");
         ciscoDevices.put("EX3200", "show running-config");
-        configMap.put("Juniper", ciscoDevices);
+        configMap.put("Cisco", ciscoDevices);
 
         HashMap<String, String> microTikDevices = new HashMap<>();
         microTikDevices.put("CRS354-48P-4S+2Q+RM", "/export compact");
         microTikDevices.put("CRS326-24G-2S+RM", "/export compact");
         microTikDevices.put("US-24E", "/export compact");
         configMap.put("MicroTik", microTikDevices);
+
+        HashMap<String, String> eltexDevices = new HashMap<>();
+        eltexDevices.put("1.3.6.1.4.1.35265.1.52", "copy tftp://%s /%s.cfg backup ");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.89", "copy tftp://%s /%s.cfg backup ");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.76", "copy tftp://%s /%s.cfg backup ");
+        eltexDevices.put("1.3.6.1.4.1.890.1.5.8.68", "copy tftp://%s /%s.cfg backup ");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.81", "copy tftp://%s /%s.cfg backup ");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.83", "copy tftp://%s /%s.cfg backup ");
+        configMap.put("Eltex", eltexDevices);
 
     }
 
@@ -275,7 +299,7 @@ public class SwitchConfigRetriever extends JFrame {
                 // Анализируем описание и возвращаем производителя
                 if (sysDescr.contains("Cisco")) {
                     manufacturer = "Cisco";
-                } 
+                }
                 else if (sysDescr.contains("D-Link")) {
                     manufacturer = "D-Link";
                 }
@@ -288,8 +312,11 @@ public class SwitchConfigRetriever extends JFrame {
                 else if (sysDescr.contains("Juniper")) {
                     manufacturer = "Juniper";
                 }
-                else if (sysDescr.contains("MikroTik")) {
+                else if (sysDescr.contains("CRS310-1G-5S-4S+")) {
                     manufacturer = "MikroTik";
+                }
+                else if (sysDescr.contains("MES")) {
+                    manufacturer = "Eltex";
                 }
             }
         }
@@ -298,19 +325,22 @@ public class SwitchConfigRetriever extends JFrame {
         return manufacturer;
     }
 
-    private String getCommand(String manufacturer, String sysObjectID) {
+    private String getCommand(String manufacturer, String sysObjectID, String ipAddress) {
+        String TFTPserverIP = TFTPserverIPField.getText();
         HashMap<String, String> deviceMap = configMap.get(manufacturer);
 
         if (deviceMap != null) {
             String command = deviceMap.get(sysObjectID);
 
             if (command != null) {
+                command = String.format(command, TFTPserverIP, ipAddress);
                 return command;
             }
         }
 
-        return "show current_config";
+        return String.format("upload cfg_toTFTP %s %s.cfg", TFTPserverIP, ipAddress);
     }
+
 
     private void retrieveSwitchConfigs() throws InterruptedException {
         File folder = new File(this.folderPath);
@@ -322,7 +352,6 @@ public class SwitchConfigRetriever extends JFrame {
                 return;
             }
         }
-
         String subnet = subnetField.getText();
         int startIP = Integer.parseInt(startIPField.getText());
         int endIP = Integer.parseInt(endIPField.getText());
@@ -338,7 +367,6 @@ public class SwitchConfigRetriever extends JFrame {
             try {
                 // Подключение по SNMP для получения производителя
                 String manufacturer = getSwitchManufacturer(ipAddress);
-
                 // Создание папки для производителя, если её нет
                 String manufacturerFolderPath = folderPath + manufacturer;
                 File manufacturerFolder = new File(manufacturerFolderPath);
@@ -350,13 +378,12 @@ public class SwitchConfigRetriever extends JFrame {
                         continue;
                     }
                 }
-
                 // Получение имени устройства
                 String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
                 String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
                 String sysObjectID = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.2.0");
                 // Формирование команды к коммутатору
-                String command = getCommand(manufacturer, sysObjectID);
+                String command = getCommand(manufacturer, sysObjectID, ipAddress);
 
                 TelnetClient telnetClient = new TelnetClient();
                 telnetClient.setDefaultTimeout(1500);
@@ -401,27 +428,19 @@ public class SwitchConfigRetriever extends JFrame {
 
                 out.write(("\r\n").getBytes());
                 out.flush();
-
+                threadSleep();
                 ret_read = in.read(buff);
                 if (ret_read > 0) {
                     appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
                 }
 
                 threadSleep();
+                writer.println(command);
+                threadSleep();
 
                 if (manufacturer != "unknown" && configMap.containsKey(manufacturer)) {
-                    // Используется TFTP для передачи конфигурации коммутатора
-                    TFTPClient tftpClient = new TFTPClient();
-                    tftpClient.setDefaultTimeout(5000); // Установка таймаута
-                    String configFileName = deviceName + ".txt";
-                    String filePath = manufacturerFolderPath + "/" + configFileName;
-                    FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-                    tftpClient.open();
-                    tftpClient.receiveFile("/config.cfg", TFTP.BINARY_MODE, fileOutputStream, ipAddress);
-                    fileOutputStream.close();
-                    tftpClient.close();
                     appendStatus("Configuration saved for: " + ipAddress);
-                } else {
+
                     out.write((command + "\r\n").getBytes());
                     out.flush();
                     appendTerminal(command);
@@ -438,8 +457,7 @@ public class SwitchConfigRetriever extends JFrame {
                     }
 
                     String config = configBuilder.toString();
-                    // String configFileName = deviceName + ".txt";
-                    String filePath = manufacturerFolderPath + "/" + ipAddress + ".txt";
+                    String filePath = manufacturerFolderPath + "/" + ipAddress + ".cfg";
                     saveConfigurationToFile(config, filePath);
                 }
 
@@ -464,7 +482,7 @@ public class SwitchConfigRetriever extends JFrame {
             appendStatus("===========================");
         }
     }
-    
+
     private String getInfoBySNMP(String ipAddress, String oidSys) throws IOException {
         String community = "public"; // SNMP community
         String sysName = "unknown";
@@ -495,7 +513,7 @@ public class SwitchConfigRetriever extends JFrame {
         return sysName;
     }
 
-    private void TFTPmethod() throws InterruptedException { //аналог retrieveSwitchConfigs() (пока не используется)
+    /*private void TFTPmethod() throws InterruptedException { //аналог retrieveSwitchConfigs() (пока не используется)
         String subnet = subnetField.getText();
         int startIP = Integer.parseInt(startIPField.getText());
         int endIP = Integer.parseInt(endIPField.getText());
@@ -525,7 +543,7 @@ public class SwitchConfigRetriever extends JFrame {
                 appendStatus("Failed to retrieve configuration for: " + ipAddress + " - " + e.getMessage());
             }
         }
-    }
+    }*/
     private void saveConfigurationToFile(String config, String filePath) {
         try (PrintWriter writer = new PrintWriter(filePath)) {
             writer.write(config);
