@@ -1,24 +1,14 @@
 package org.metamodernity;
-
 import org.metamodernity.filter.IntFilter;
-
 import org.apache.commons.net.telnet.TelnetClient;
-import org.apache.commons.net.tftp.TFTP;
-import org.apache.commons.net.tftp.TFTPClient;
-
-import org.json.simple.*;
-import org.json.simple.parser.JSONParser;
-
 import javax.swing.*;
 import javax.swing.text.PlainDocument;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.SocketException;
 import java.util.HashMap;
-
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
@@ -33,24 +23,24 @@ import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 public class SwitchConfigRetriever extends JFrame {
-    private JTextArea statusTextArea;
-    private JTextArea terminalTextArea;
-    private JTextField subnetField;
-    private JTextField startIPField;
-    private JTextField endIPField;
-    private JTextField loginField;
+    final JTextArea statusTextArea;
+    final JTextArea terminalTextArea;
+    final JTextField subnetField;
+    final JTextField startIPField;
+    final JTextField endIPField;
+    final JTextField loginField;
 
-    private JTextField TFTPserverIPField;
-    private JPasswordField passwordField;
-    private JButton startButton;
-    private JButton pauseButton;
-    private JButton infoButton;
-    private JButton terminalButton;
+    final JTextField TFTPserverIPField;
+    final JPasswordField passwordField;
+    final JButton startButton;
+    final JButton pauseButton;
+    final JButton infoButton;
+    final JButton terminalButton;
 
     private Thread retrieverThread;
     private Thread controllerThread;
-    private HashMap<String, HashMap<String, String>> configMap = new HashMap<>();
-    private String folderPath = "C:/SwitchConfigs/";
+    final HashMap<String, HashMap<String, String>> configMap = new HashMap<>();
+    final String folderPath = "C:/SwitchConfigs/";
     private volatile boolean isRunning = false;
     private volatile boolean isPaused = false;
 
@@ -155,7 +145,7 @@ public class SwitchConfigRetriever extends JFrame {
 
         JScrollPane scrollPane = new JScrollPane(statusTextArea);
 
-        subnetField = new JTextField("192.168.200"); //"192.168.200"
+        subnetField = new JTextField("192.168.200"); 
         ((PlainDocument) subnetField.getDocument()).setDocumentFilter(new IntFilter(true));
         subnetField.setToolTipText("Enter the subnet");
 
@@ -271,8 +261,8 @@ public class SwitchConfigRetriever extends JFrame {
 
     // Метод для получения производителя по SNMP
     private String getSwitchManufacturer(String ipAddress) throws IOException {
-        String community = "public"; // SNMP community
-        String oidSysDescr = "1.3.6.1.2.1.1.1.0"; // OID для sysDescr.0
+        String community = "public";
+        String oidSysDescr = "1.3.6.1.2.1.1.1.0";
         String manufacturer = "unknown";
 
         TransportMapping<? extends Address> transport = new DefaultUdpTransportMapping();
@@ -367,17 +357,6 @@ public class SwitchConfigRetriever extends JFrame {
             try {
                 // Подключение по SNMP для получения производителя
                 String manufacturer = getSwitchManufacturer(ipAddress);
-                // Создание папки для производителя, если её нет
-                /*String manufacturerFolderPath = folderPath + manufacturer;
-                File manufacturerFolder = new File(manufacturerFolderPath);
-                if (!manufacturerFolder.exists()) {
-                    if (manufacturerFolder.mkdir()) {
-                        appendStatus("Created folder for manufacturer: " + manufacturer);
-                    } else {
-                        appendStatus("Failed to create folder for manufacturer: " + manufacturer);
-                        continue;
-                    }
-                }*/
                 // Получение имени устройства
                 String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
                 String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
@@ -447,14 +426,6 @@ public class SwitchConfigRetriever extends JFrame {
 
                     out.flush();
                     appendStatus("Configuration saved for: " + ipAddress + " check the folder.");
-                    /*ret_read = in.read(buff);
-                    StringBuilder configBuilder = new StringBuilder();
-                    while (ret_read >= 0) {
-                        if (ret_read > 0) {
-                            configBuilder.append(new String(buff, 0, ret_read, "UTF-8"));
-                        }
-                        ret_read = in.read(buff);
-                    }*/
 
                 }
 
@@ -482,7 +453,7 @@ public class SwitchConfigRetriever extends JFrame {
     }
 
     private String getInfoBySNMP(String ipAddress, String oidSys) throws IOException {
-        String community = "public"; // SNMP community
+        String community = "public";
         String sysName = "unknown";
 
         TransportMapping<? extends Address> transport = new DefaultUdpTransportMapping();
@@ -511,46 +482,6 @@ public class SwitchConfigRetriever extends JFrame {
         return sysName;
     }
 
-    /*private void TFTPmethod() throws InterruptedException { //аналог retrieveSwitchConfigs() (пока не используется)
-        String subnet = subnetField.getText();
-        int startIP = Integer.parseInt(startIPField.getText());
-        int endIP = Integer.parseInt(endIPField.getText());
-
-        for (int i = startIP; i <= endIP; i++) {
-            String ipAddress = subnet + "." + i;
-            appendStatus("Checking: " + ipAddress);
-            try {
-                TFTPClient tftpClient = new TFTPClient();
-
-                // Установка таймаута
-                tftpClient.setDefaultTimeout(5000);
-
-
-                String localFile = ipAddress + ".txt";
-                FileOutputStream fileOutputStream = new FileOutputStream(localFile);
-
-                // Получение конфигурации коммутатора по TFTP
-                tftpClient.open();
-                tftpClient.receiveFile("/config.cfg", TFTP.BINARY_MODE, fileOutputStream, ipAddress);
-                fileOutputStream.close();
-                tftpClient.close();
-
-                appendStatus("Configuration saved for: " + ipAddress);
-
-            } catch (IOException e) {
-                appendStatus("Failed to retrieve configuration for: " + ipAddress + " - " + e.getMessage());
-            }
-        }
-    }*/
-    /*private void saveConfigurationToFile(String config, String filePath) {
-        try (PrintWriter writer = new PrintWriter(filePath)) {
-            writer.write(config);
-            appendStatus("Configuration saved to: " + filePath);
-        } catch (IOException e) {
-            appendStatus("Failed to save configuration: " + e.getMessage());
-        }
-    }*/
-
     private void threadSleep(){
         try {
             Thread.sleep(500);  //Даём потоку подождать
@@ -563,7 +494,7 @@ public class SwitchConfigRetriever extends JFrame {
         try {
             // Создаем процесс, выполняющий команду открытия терминала с заданной командой
             ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd", "/k", command);
-            processBuilder.inheritIO(); // Позволяет наследовать ввод/вывод с текущего Java процесса
+            processBuilder.inheritIO();
             processBuilder.start();
         } catch (IOException e) {
             e.printStackTrace();
@@ -597,16 +528,6 @@ public class SwitchConfigRetriever extends JFrame {
     }
 
     public static void main(String[] args) {
-
-        /*JSONParser parser = new JSONParser();
-
-        try {
-            JSONObject obj = (JSONObject)parser.parse(new FileReader(SwitchConfigRetriever.class.getClassLoader().getResource("commands.json").toURI().getPath()));
-            System.out.println(obj.toString());
-        }
-        catch (Exception e) {
-            System.out.println(e);
-        }*/
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
