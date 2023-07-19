@@ -137,7 +137,7 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow("Абоба");
+                infoWindow("For the program to work, you will need a TFTP server.\nVersion:0.1");
             }
         });
 
@@ -247,9 +247,9 @@ public class SwitchConfigRetriever extends JFrame {
         configMap.put("Juniper", juniperDevices);
 
         HashMap<String, String> ciscoDevices = new HashMap<>();
-        ciscoDevices.put("EX8200", "show running-config");
-        ciscoDevices.put("EX3300", "show running-config");
-        ciscoDevices.put("EX3200", "show running-config");
+        ciscoDevices.put("EX8200", "copy running-config tftp %s %s.cfg");
+        ciscoDevices.put("EX3300", "copy running-config tftp %s %s.cfg");
+        ciscoDevices.put("EX3200", "copy running-config tftp %s %s.cfg");
         configMap.put("Cisco", ciscoDevices);
 
         HashMap<String, String> microTikDevices = new HashMap<>();
@@ -259,12 +259,12 @@ public class SwitchConfigRetriever extends JFrame {
         configMap.put("MicroTik", microTikDevices);
 
         HashMap<String, String> eltexDevices = new HashMap<>();
-        eltexDevices.put("1.3.6.1.4.1.35265.1.52", "copy tftp://%s /%s.cfg backup ");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.89", "copy tftp://%s /%s.cfg backup ");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.76", "copy tftp://%s /%s.cfg backup ");
-        eltexDevices.put("1.3.6.1.4.1.890.1.5.8.68", "copy tftp://%s /%s.cfg backup ");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.81", "copy tftp://%s /%s.cfg backup ");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.83", "copy tftp://%s /%s.cfg backup ");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.52", "copy running-config tftp://%s/%s.cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.89", "copy running-config tftp://%s/%s.cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.76", "copy running-config tftp://%s/%s.cfg");
+        eltexDevices.put("1.3.6.1.4.1.890.1.5.8.68", "copy running-config tftp://%s/%s.cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.81", "copy running-config tftp://%s/%s.cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.83", "copy running-config tftp://%s/%s.cfg");
         configMap.put("Eltex", eltexDevices);
 
     }
@@ -368,7 +368,7 @@ public class SwitchConfigRetriever extends JFrame {
                 // Подключение по SNMP для получения производителя
                 String manufacturer = getSwitchManufacturer(ipAddress);
                 // Создание папки для производителя, если её нет
-                String manufacturerFolderPath = folderPath + manufacturer;
+                /*String manufacturerFolderPath = folderPath + manufacturer;
                 File manufacturerFolder = new File(manufacturerFolderPath);
                 if (!manufacturerFolder.exists()) {
                     if (manufacturerFolder.mkdir()) {
@@ -377,7 +377,7 @@ public class SwitchConfigRetriever extends JFrame {
                         appendStatus("Failed to create folder for manufacturer: " + manufacturer);
                         continue;
                     }
-                }
+                }*/
                 // Получение имени устройства
                 String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
                 String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
@@ -439,26 +439,23 @@ public class SwitchConfigRetriever extends JFrame {
                 threadSleep();
 
                 if (manufacturer != "unknown" && configMap.containsKey(manufacturer)) {
-                    appendStatus("Configuration saved for: " + ipAddress);
+
 
                     out.write((command + "\r\n").getBytes());
                     out.flush();
                     appendTerminal(command);
 
                     out.flush();
-
-                    ret_read = in.read(buff);
+                    appendStatus("Configuration saved for: " + ipAddress + " check the folder.");
+                    /*ret_read = in.read(buff);
                     StringBuilder configBuilder = new StringBuilder();
                     while (ret_read >= 0) {
                         if (ret_read > 0) {
                             configBuilder.append(new String(buff, 0, ret_read, "UTF-8"));
                         }
                         ret_read = in.read(buff);
-                    }
+                    }*/
 
-                    String config = configBuilder.toString();
-                    String filePath = manufacturerFolderPath + "/" + ipAddress + ".cfg";
-                    saveConfigurationToFile(config, filePath);
                 }
 
                 telnetClient.disconnect();
@@ -481,6 +478,7 @@ public class SwitchConfigRetriever extends JFrame {
             }
             appendStatus("===========================");
         }
+        appendStatus("===========================");
     }
 
     private String getInfoBySNMP(String ipAddress, String oidSys) throws IOException {
@@ -544,14 +542,14 @@ public class SwitchConfigRetriever extends JFrame {
             }
         }
     }*/
-    private void saveConfigurationToFile(String config, String filePath) {
+    /*private void saveConfigurationToFile(String config, String filePath) {
         try (PrintWriter writer = new PrintWriter(filePath)) {
             writer.write(config);
             appendStatus("Configuration saved to: " + filePath);
         } catch (IOException e) {
             appendStatus("Failed to save configuration: " + e.getMessage());
         }
-    }
+    }*/
 
     private void threadSleep(){
         try {
@@ -600,7 +598,7 @@ public class SwitchConfigRetriever extends JFrame {
 
     public static void main(String[] args) {
 
-        JSONParser parser = new JSONParser();
+        /*JSONParser parser = new JSONParser();
 
         try {
             JSONObject obj = (JSONObject)parser.parse(new FileReader(SwitchConfigRetriever.class.getClassLoader().getResource("commands.json").toURI().getPath()));
@@ -608,7 +606,7 @@ public class SwitchConfigRetriever extends JFrame {
         }
         catch (Exception e) {
             System.out.println(e);
-        }
+        }*/
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
