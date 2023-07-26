@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Документация проекта</title>
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+    <div class="btn-up btn-up_hide"></div>   
+    <nav>
+        <ul class="navbar">
+            <li class="navitem"><a href="algoritm.html">Алгоритм работы программы</a></li>
+        </ul>
+    </nav>
+    <header class="header">
+        <h1>Добро пожаловать в документацию проекта!</h1>
+    </header>
+    <main class="main">
+        <h1>Обзор</h1>
+        <p>Документация Switch Config Retriever предоставляет подробное описание Java-приложения для получения конфигураций сетевых коммутаторов. Приложение позволяет автоматически извлекать конфигурации коммутаторов, используя протоколы SNMP, Telnet и TFTP. Программа разработана для автоматизации процесса сбора конфигураций сетевых устройств с различными производителями, такими как Cisco, D-Link, Juniper, MicroTik, Eltex и другими. Сбор конфигураций осуществляется через TFTP сервер.</p>
+        <p>С полным исходным кодом приложения вы можете ознакомиться по ссылке:</p><a href="https://github.com/metamodernity/SwitchConfigRetriever">https://github.com/metamodernity/SwitchConfigRetriever</a>
+        <h2>Основные возможности</h2>
+        <ul>
+            <li>Получение конфигураций сетевых коммутаторов различных производителей.</li>
+            <li>Использование протокола SNMP для определения производителя, имени и OID коммутатора.</li>
+            <li>Удобный интерфейс для настройки параметров сканирования сети.</li>
+            <li>Удобный доступ к терминалу компьютера.</li>
+            <li>Пауза и остановка процесса сканирования для управления выполнением приложения.</li>
+            <li>Отображение результатов сканирования в окне приложения и в терминальной консоли.</li>
+        </ul>
+
+        <h2>Требования к окружению</h2>
+        <p>Для работы приложения Switch Config Retriever необходимы следующие компоненты:</p>
+        <ul>
+            <li>Java Runtime Environment (JRE) версии 8 или выше.</li>
+            <li>Доступ к устройствам локальной сети.</li>
+            <li>Настроенный TFTP сервер.</li>
+        </ul>
+        <h2>Интерфейс программы</h2>
+        <p>Панель ввода: Здесь пользователь может ввести необходимые параметры для сбора конфигураций.</p>
+        <ul class="infoList">
+            <li><b>Subnet:</b> Подсеть (например, 192.168.200).</li>
+            <li><b>Start IP:</b> Начальный IP-адрес для сканирования (от 1 до 254).</li>
+            <li><b>End IP:</b> Конечный IP-адрес для сканирования (от 1 до 254).</li>
+            <li><b>TFTP server:</b> IP-адрес TFTP сервера, куда будут загружаться конфигурации.</li>
+            <li><b>Login:</b> Логин для авторизации на коммутаторах через Telnet.</li>
+            <li><b>Password:</b> Пароль для авторизации на коммутаторах через Telnet.</li>
+        </ul>
+        <p>Панель управления: Здесь расположены кнопки управления операцией сбора конфигураций.</p>
+        <ul class="infoList">
+            <li><b>Start:</b> Запустить процесс сбора конфигураций.</li>
+            <li><b>Stop:</b> Остановить процесс сбора конфигураций (доступна только после запуска).</li>
+            <li><b>Pause:</b> Приостановить/возобновить процесс сбора конфигураций (доступна только после запуска).</li>
+        </ul>
+        <p>Панель статуса: Здесь отображается статус выполнения операции сбора конфигураций и логи.</p>
+        <ul class="infoList">
+            <li><b>Status (слева):</b> Отображение статуса выполнения операции.</li>
+            <li><b>Terminal (справа):</b> Отображение логов, полученных из Telnet-сессии.</li>
+        </ul>
+        <h2>Как использовать эту программу</h2>
+        <p>Для запуска приложения Switch Config Retriever выполните следующие шаги:</p>
+        <ol>
+            <li>Введите необходимые параметры в панель ввода (Subnet, Start IP, End IP, TFTP server, Login, Password).</li>
+            <li>Нажмите кнопку "Start" для запуска процесса сбора конфигураций.</li>
+            <li>Программа автоматически определит производителя каждого коммутатора по его IP-адресу с помощью протокола SNMP.</li>
+            <li>Программа выполнит Telnet-подключение к каждому коммутатору и загрузит его конфигурацию на TFTP сервер.</li>
+            <li>Статус выполнения операции и логи будут отображены в панели статуса.</li>
+            <li>Вы можете нажать кнопку "Stop" для остановки операции в любой момент, и "Pause" для приостановки/возобновления операции.</li>
+        </ol>
+        <h2>Описание основных методов</h2>
+        <ol>
+            <li><code>public SwitchConfigRetriever()</code>: Конструктор класса, инициализирует интерфейс программы и настройки.</li>
+            <li><code>private void initializeConfigMap()</code>: Инициализирует карту конфигурации, содержащую команды для различных производителей коммутаторов.</li>
+            <li><code>private String getSwitchManufacturer(String ipAddress) throws IOException</code>: Определяет производителя коммутатора по его IP-адресу с помощью протокола SNMP.</li>
+            <li><code>private String getCommandWithDateTime(String manufacturer, String sysObjectID, String ipAddress)</code>: Формирует команду с учётом даты и времени для загрузки конфигурации на TFTP сервер.</li>
+            <li><code>private String getCurrentDateTime()</code>: Метод для получения текущей даты и времени.</li>
+            <li><code>private void retrieveSwitchConfigs() throws InterruptedException</code>: Основной метод для сбора конфигураций коммутаторов.</li>
+            <li><code>private String getInfoBySNMP(String ipAddress, String oidSys) throws IOException</code>: Получает информацию об устройствах, такую как имя устройства и OID, по протоколу SNMP.</li>
+            <li><code>private void threadSleep()</code>: Метод для приостановки потока на некоторое время.</li>
+            <li><code>public static void openTerminal(String command)</code>: Метод для открытия командной строки с заданной командой.</li>
+            <li><code>private void appendStatus(String message)</code>: Метод для добавления текста в панель статуса.</li>
+            <li><code>private void infoWindow(String message)</code>: Метод для отображения информационного окна с заданным сообщением.</li>
+            <li><code>private void appendTerminal(String message)</code>: Метод для добавления текста в панель логов (терминал).</li>
+            <li><code>public static void main(String[] args)</code>: Точка входа в программу.</li>
+        </ol>
+    </main>
+    <footer class="footer" id="footer">
+        <p>Самара ПГУТИ 2023г. Проект выполнен в рамках летней учебной практики.</p>
+    </footer>
+    <script src="./scripts/scroll.js"></script>
+</body>
+</html>
