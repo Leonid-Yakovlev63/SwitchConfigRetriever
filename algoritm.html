@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Документация проекта</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="btn-up btn-up_hide"></div>   
+    <header>
+        <nav>
+            <ul class="navbar">
+                <li class="navitem"><a href="index.html">Главная</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main class="main">
+        <div class="algoritm">
+            <div class="rightSection">
+                <img class="gallery-img" src="img/Алгоритм.png">
+            </div>
+            <div class="leftSection">
+                <h2>Алгоритм работы программы "Switch Config Retriever"</h2>
+<ol>
+<li>
+<h3>Создание пользовательского интерфейса:</h3>
+<ul class="infoList">
+<li>Создается окно приложения с заголовком "Switch Config Retriever".</li>
+<li>В окне размещаются текстовые поля, кнопки и текстовые области для ввода параметров и вывода информации.</li>
+<li>Поля ввода предназначены для задания диапазона IP-адресов, IP-адреса TFTP-сервера, логина и пароля для доступа к коммутаторам.</li>
+<li>Кнопки "Start", "Pause", "Info" и "Terminal" позволяют управлять процессом получения конфигураций и отображать информацию.</li>
+<li>Создается хэш-карта <code>configMap</code>, которая содержит информацию о командах для получения конфигураций различных производителей коммутаторов.</li>
+</ul>
+</li>
+<li>
+<h3>Метод <code>getSwitchManufacturer()</code>:</h3>
+<ul class="infoList">
+<li>Осуществляет запрос к коммутатору по протоколу SNMP с использованием переданного IP-адреса.</li>
+<li>Получает описание устройства и анализирует его, чтобы определить производителя коммутатора.</li>
+<li>Возвращает имя производителя, если он определен, или строку "unknown", если производитель неизвестен.</li>
+<li>
+Параметры:
+<ul class="infoList">
+<li><strong>ipAddress</strong> - IP-адрес коммутатора для определения производителя.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<h3>Метод <code>private String getCommandWithDateTime()</code>:</h3>
+<ul class="infoList">
+<li>Получает информацию о производителе и идентификаторе устройства (sysObjectID).</li>
+<li>Использует полученные данные для выбора соответствующей команды для получения конфигурации коммутатора.</li>
+<li>Возвращает сформированную команду с учётом текущей даты и времени для переданного производителя и IP-адреса коммутатора.</li>
+<li>
+Параметры:
+<ul class="infoList">
+<li><strong>manufacturer</strong> - имя производителя коммутатора.</li>
+<li><strong>sysObjectID</strong> - идентификатор устройства (sysObjectID) коммутатора.</li>
+<li><strong>ipAddress</strong> - IP-адрес коммутатора для получения конфигурации.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+    <!---->
+    <h3>Метод <code>private String getCurrentDateTime()</code>:</h3>
+        <ul class="infoList">
+            <li>Метод используется для получения текущей даты и времени и вызывается в методе getCommandWithDateTime().</li>
+        </ul>
+</li>
+    <!---->
+<h3>Метод <code>retrieveSwitchConfigs()</code>:</h3>
+<ul class="infoList">
+<li>Получает значения из пользовательского интерфейса: диапазон IP-адресов, IP-адрес TFTP-сервера, логин и пароль.</li>
+<li>Перебирает IP-адреса в заданном диапазоне.</li>
+<li>Для каждого IP-адреса выполняет следующие действия:</li>
+<li>
+Параметры:
+<ul class="infoList">
+<li><strong>ipAddress</strong> - IP-адрес коммутатора, для которого выполняется процесс получения конфигурации.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<h3>Метод <code>getInfoBySNMP()</code>:</h3>
+<ul class="infoList">
+<li>Осуществляет запрос к коммутатору по протоколу SNMP с использованием переданного IP-адреса и OID (Object Identifier).</li>
+<li>Возвращает полученную информацию по SNMP.</li>
+<li>
+Параметры:
+<ul class="infoList">
+<li><strong>ipAddress</strong> - IP-адрес коммутатора, для которого выполняется запрос.</li>
+<li><strong>oidSys</strong> - OID (Object Identifier) для получения информации по SNMP.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<h3>Метод <code>threadSleep()</code>:</h3>
+<ul class="infoList">
+    <li>Приостанавливает выполнение текущего потока.</li>
+    <li>
+        Параметры:
+        <ul class="infoList">
+        <li><strong>timeSleep</strong> - время для приостановки потока в миллисекундах.</li>
+        </ul>
+    </li>
+</ul>
+</li>
+<li>
+<h3>Методы <code>appendStatus()</code> и <code>appendTerminal()</code>:</h3>
+<ul class="infoList">
+<li>Обновляют текстовые области статуса и терминала в пользовательском интерфейсе, добавляя новые сообщения.</li>
+<li>
+Параметры:
+<ul class="infoList">
+<li><strong>message</strong> - сообщение для добавления в текстовую область статуса или терминала.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<h3>Метод <code>openTerminal()</code>:</h3>
+<ul class="infoList">
+<li>Создает процесс, выполняющий команду для открытия терминала с переданной командой.</li>
+<li>
+Параметры:
+<ul class="infoList">
+<li><strong>command</strong> - команда для выполнения в открывшемся терминале.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+    <h3>Метод <code>infoWindow()</code>:</h3>
+    <ul class="infoList">
+        <li>Открывает диалоговое окно с информацией.</li>
+        <li>
+            Параметры:
+            <ul class="infoList">
+                <li><strong>message</strong> - текст для отображения в диалогово окне.</li>
+            </ul>
+        </li>
+    </ul>
+</li>
+</ol>
+            </div>
+        </div>
+        <div>
+            <h3>Диаграммы классов</h3>
+            <p>Кликните на изображение чтобы открыть во весь экран</p>
+            <div class="gallery">
+                <img class="gallery-img" src="img/SwitchConfigRetriever.png">
+                <img class="gallery-img" src="img/InitFilter.png">
+            </div>
+        </div>
+        <div class="tabs-container">
+            <div class="tab">
+                <p>Схема передачи данных</p>
+                <button class="tab-btn" onclick="toggleTab(this)">Показать текст</button>
+                <div class="text-content" style="display: none;">
+                    <p>1 вариант с удалённым TFTP сервером:</p>
+                    <img src="img/Схема%20передачи%20данных%201.drawio.png">
+                    <p>2 вариант с локальным TFTP сервером:</p>
+                    <img src="img/Схема%20передачи%20данных%202.drawio.png">
+                </div>
+            </div>
+            <div class="tab">
+                <p>Класс SwitchConfigRetriever</p>
+                <button class="tab-btn" onclick="toggleTab(this)">Показать текст</button>
+                <div class="text-content" style="display: none;">
+                    <h1>Класс: SwitchConfigRetriever</h1>
+    <p>
+        Класс <strong>SwitchConfigRetriever</strong> представляет собой графическую программу для получения конфигурации коммутаторов через протоколы SNMP, Telnet и TFTP.
+        Программа позволяет указать подсеть и диапазон IP-адресов коммутаторов для проверки.
+    </p>
+
+    <h2>Конструктор</h2>
+    <p>
+        <strong>SwitchConfigRetriever()</strong>
+    </p>
+    <p>
+        Создает новый экземпляр класса <code>SwitchConfigRetriever</code> и инициализирует его компоненты интерфейса пользователя.
+    </p>
+
+    <h2>Поля</h2>
+    <p>
+        Класс <code>SwitchConfigRetriever</code> содержит следующие поля:
+    </p>
+     <ul class="infoList">
+        <li>
+            <strong>statusTextArea</strong> - компонент текстовой области для отображения статусных сообщений.
+        </li>
+        <li>
+            <strong>terminalTextArea</strong> - компонент текстовой области для отображения вывода терминала.
+        </li>
+        <li>
+            <strong>subnetField</strong> - компонент текстового поля для ввода подсети IP-адресов коммутаторов.
+        </li>
+        <li>
+            <strong>startIPField</strong> - компонент текстового поля для ввода начального IP-адреса в диапазоне проверки.
+        </li>
+        <li>
+            <strong>endIPField</strong> - компонент текстового поля для ввода конечного IP-адреса в диапазоне проверки.
+        </li>
+        <li>
+            <strong>loginField</strong> - компонент текстового поля для ввода логина для подключения к коммутаторам.
+        </li>
+        <li>
+            <strong>TFTPserverIPField</strong> - компонент текстового поля для ввода IP-адреса TFTP-сервера.
+        </li>
+        <li>
+            <strong>passwordField</strong> - компонент поля для ввода пароля для подключения к коммутаторам.
+        </li>
+        <li>
+            <strong>startButton</strong> - компонент кнопки "Start" для запуска процесса получения конфигурации.
+        </li>
+        <li>
+            <strong>pauseButton</strong> - компонент кнопки "Pause" для приостановки процесса получения конфигурации.
+        </li>
+        <li>
+            <strong>infoButton</strong> - компонент кнопки "Info" для отображения информационного окна.
+        </li>
+        <li>
+            <strong>terminalButton</strong> - компонент кнопки "Terminal" для открытия терминального окна.
+        </li>
+        <li>
+            <strong>retrieverThread</strong> - поток, выполняющий процесс получения конфигурации коммутаторов.
+        </li>
+        <li>
+            <strong>controllerThread</strong> - поток, управляющий выполнением процесса получения конфигурации.
+        </li>
+        <li>
+            <strong>configMap</strong> - хэш-карта для хранения команд получения конфигурации для разных производителей коммутаторов.
+        </li>
+        <li>
+            <strong>folderPath</strong> - путь к папке, в которой будут сохранены конфигурации коммутаторов.
+        </li>
+        <li>
+            <strong>isRunning</strong> - флаг, указывающий, выполняется ли процесс получения конфигурации.
+        </li>
+        <li>
+            <strong>isPaused</strong> - флаг, указывающий, приостановлен ли процесс получения конфигурации.
+        </li>
+    </ul>
+
+    <h2>Методы</h2>
+<p>
+    Класс <code>SwitchConfigRetriever</code> предоставляет следующие методы:
+</p>
+<!-- Метод getSwitchManufacturer -->
+<h3>private String getSwitchManufacturer(String ipAddress) throws IOException</h3>
+<p>
+    Получает производителя коммутатора по протоколу SNMP, используя переданный IP-адрес.
+</p>
+<ul class="infoList">
+    <li>
+        <strong>ipAddress</strong> - IP-адрес коммутатора для определения производителя.
+    </li>
+</ul>
+<p>
+    Метод выполняет запрос к коммутатору по SNMP для получения информации о производителе и анализирует полученное описание, чтобы определить производителя.
+    Если производитель определен, метод возвращает его имя, в противном случае возвращает "unknown".
+</p>
+<!-- Метод getCommand -->
+<h3>private String getCommandWithDateTime(String manufacturer, String sysObjectID, String ipAddress)</h3>
+<p>
+    Возвращает команду для получения конфигурации коммутатора на основе переданной информации о производителе и идентификаторе устройства (sysObjectID).
+</p>
+<ul class="infoList">
+    <li>
+        <strong>manufacturer</strong> - имя производителя коммутатора.
+    </li>
+    <li>
+        <strong>sysObjectID</strong> - идентификатор устройства, полученный из протокола SNMP.
+    </li>
+    <li>
+        <strong>ipAddress</strong> - IP-адрес коммутатора, для которого необходимо получить конфигурацию.
+    </li>
+</ul>
+<p>
+    Метод использует переданную информацию о производителе и идентификаторе устройства, чтобы выбрать соответствующую команду для получения конфигурации коммутатора.
+    Если соответствующая команда не найдена, метод вернет стандартную команду для загрузки конфигурации по умолчанию.
+    Также учитывается текущая дата и время.
+</p>
+<!-- Метод getCurrentDateTime() -->
+<h3>private String getCurrentDateTime()</h3>
+<p>
+    Возвращает текущую дату и время по следующему формату: "dd-MM-yyyy_HH-mm", где:
+</p>
+<ul class="infoList">
+    <li>
+        <strong>dd</strong> - день.
+    </li>
+    <li>
+        <strong>MM</strong> - месяц.
+    </li>
+    <li>
+        <strong>yyyy</strong> - год.
+    </li>
+    <li>
+        <strong>HH</strong> - часы.
+    </li>
+    <li>
+        <strong>mm</strong> - минуты.
+    </li>
+</ul>
+<p>
+    Метод используется внутри метода getCommandWithDateTime() для того чтобы сохранять конфигурацию устройства с датой и временем в названии файла.
+</p>
+<!-- Метод retrieveSwitchConfigs -->
+<h3>private void retrieveSwitchConfigs() throws InterruptedException</h3>
+<p>
+    Получает конфигурации коммутаторов в указанном диапазоне IP-адресов и сохраняет их в указанную папку.
+</p>
+<p>
+    Метод выполняет перебор IP-адресов в заданном диапазоне и для каждого адреса выполняет следующие шаги:
+</p>
+<ol class="infoList">
+    <li>
+        Получает производителя коммутатора с помощью метода <code>getSwitchManufacturer()</code>.
+    </li>
+    <li>
+        Получает имя устройства и другую информацию по SNMP с помощью метода <code>getInfoBySNMP()</code>.
+    </li>
+    <li>
+        Формирует команду для получения конфигурации с помощью метода <code>getCommandWithDateTime()</code>.
+    </li>
+    <li>
+        Устанавливает соединение с коммутатором по протоколу Telnet, авторизуется и выполняет команду для получения конфигурации.
+    </li>
+    <li>
+        Если производитель определен и имеется соответствующая команда для получения конфигурации, сохраняет полученную конфигурацию в указанную папку.
+    </li>
+</ol>
+<p>
+    Метод также предоставляет возможность остановить процесс получения конфигураций коммутаторов посредством кнопки "Stop" в пользовательском интерфейсе, а также приостановить и возобновить процесс посредством кнопки "Pause".
+</p>
+<!-- Метод getInfoBySNMP -->
+<h3>private String getInfoBySNMP(String ipAddress, String oidSys) throws IOException</h3>
+<p>
+    Получает информацию по SNMP с помощью переданного IP-адреса и OID (Object Identifier).
+</p>
+<ul class="infoList">
+    <li>
+        <strong>ipAddress</strong> - IP-адрес коммутатора для выполнения запроса SNMP.
+    </li>
+    <li>
+        <strong>oidSys</strong> - OID (Object Identifier) для получения информации по SNMP.
+    </li>
+</ul>
+<p>
+    Метод выполняет запрос к коммутатору по SNMP с использованием переданного IP-адреса и OID и возвращает полученную информацию. В данном контексте метод используется для получения имени устройства и других данных о коммутаторе.
+</p>
+<!-- Метод threadSleep -->
+<h3>private void threadSleep()</h3>
+<p>
+    Приостанавливает выполнение текущего потока.
+</p>
+<p>
+    Метод используется для обеспечения небольшой задержки между выполнением различных операций, чтобы избежать чрезмерной нагрузки на систему.
+</p>
+<ul class="infoList">
+    <li>
+        <strong>timeSleep</strong> - время в миллисекундах для приостановки потока.
+    </li>
+</ul>
+<!-- Метод openTerminal -->
+<h3>public static void openTerminal(String command)</h3>
+<p>
+    Открывает терминал с указанной командой.
+</p>
+<ul class="infoList">
+    <li>
+        <strong>command</strong> - команда, которую необходимо выполнить в открывшемся терминале.
+    </li>
+</ul>
+<p>
+    Метод использует системные средства для открытия нового терминала и выполнения указанной команды в нем. Полезен для выполнения команд терминала без необходимости взаимодействия с ним из приложения.
+</p>
+<!-- Метод appendStatus -->
+<h3>private void appendStatus(String message)</h3>
+<p>
+    Добавляет сообщение в текстовую область статуса в пользовательском интерфейсе.
+</p>
+<ul class="infoList">
+    <li>
+        <strong>message</strong> - сообщение для добавления в текстовую область статуса.
+    </li>
+</ul>
+<p>
+    Метод обновляет текстовую область статуса, добавляя новое сообщение. Используется для отображения текущего статуса процесса получения конфигураций коммутаторов.
+</p>
+<!-- Метод appendTerminal -->
+<h3>private void appendTerminal(String message)</h3>
+<p>
+    Добавляет сообщение в текстовую область терминала в пользовательском интерфейсе.
+</p>
+<ul class="infoList">
+    <li>
+        <strong>message</strong> - сообщение для добавления в текстовую область терминала.
+    </li>
+</ul>
+<p>
+    Метод обновляет текстовую область терминала, добавляя новое сообщение. Используется для отображения вывода терминала в реальном времени.
+</p>
+<!-- Метод infoWindow -->
+<h3>private void infoWindow()</h3>
+<p>
+    Метод открывает диалоговое окно с информацией.
+</p>
+                    <li>
+                        <strong>message</strong> - текст для отображения в диалогово окне.
+                    </li>
+<!-- Метод main -->
+<h3>public static void main(String[] args)</h3>
+<p>
+    Точка входа в приложение.
+</p>
+<ul class="infoList">
+    <li>
+        <strong>args</strong> - аргументы командной строки, если они передаются при запуске приложения (не используются в данном приложении).
+    </li>
+</ul>
+<p>
+    Метод инициализирует экземпляр класса <code>SwitchConfigRetriever</code> и запускает графический интерфейс приложения, где пользователь может задать параметры получения конфигураций коммутаторов и запустить процесс получения.
+</p>
+                </div>
+            </div>
+            <div class="tab">
+                <p>Класс IntFilter</p>
+                <button class="tab-btn" onclick="toggleTab(this)">Показать текст</button>
+                <div class="text-content" style="display: none;">
+                    <h1>Класс: IntFilter</h1><strong>IntFilter</strong> — это пользовательская реализация класса Swing <code>DocumentFilter</code>.
+                    <p>Это позволяет фильтровать ввод для текстового документа, разрешая только целые числа (положительные или отрицательные) с необязательным символом точки.</p>
+                    <h2>Конструктор</h2>
+                    <p>
+                        <strong>IntFilter(boolean allowDot)</strong>
+                    </p>
+                    <p>
+                        Создает новый экземпляр класса <code>IntFilter</code> с указанной конфигурацией.
+                    </p>
+                    <ul class="infoList">
+                        <li>
+                            <strong>allowDot</strong> - параметр типа <code>boolean</code>, который определяет, разрешено ли использование символа точки ('.') в числе. Если значение <code>true</code>, то точка разрешена; если <code>false</code>, то только целые числа будут разрешены.
+                        </li>
+                    </ul>
+
+                    <h2>Методы</h2>
+                    <p>
+                        Класс <code>IntFilter</code> предоставляет следующие методы:
+                    </p>
+
+                    <h3>public void insertString(DocumentFilter.FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException</h3>
+                    <p>
+                        Данный метод переопределяет метод <code>insertString</code> из класса <code>DocumentFilter</code>.
+                        Он вызывается, когда происходит вставка нового текста в документ.
+                    </p>
+                    <ul class="infoList">
+                        <li>
+                            <strong>fb</strong> - объект типа <code>DocumentFilter.FilterBypass</code>, который предоставляет методы для изменения содержимого документа.
+                        </li>
+                        <li>
+                            <strong>offset</strong> - позиция в документе, с которой начинается вставка нового текста.
+                        </li>
+                        <li>
+                            <strong>string</strong> - строка, которую необходимо вставить.
+                        </li>
+                        <li>
+                            <strong>attr</strong> - атрибуты текста.
+                        </li>
+                    </ul>
+                    <p>
+                        Если результат проверки методом <code>test()</code> для текста, полученного после вставки нового текста, является истинным, то метод передает управление родительской реализации <code>super.insertString()</code> для выполнения вставки текста в документ.
+                    </p>
+
+                    <h3>public void replace(DocumentFilter.FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException</h3>
+                    <p>
+                        Данный метод переопределяет метод <code>replace</code> из класса <code>DocumentFilter</code>.
+                        Он вызывается, когда происходит замена части текста в документе.
+                    </p>
+                    <ul class="infoList">
+                        <li>
+                            <strong>fb</strong> - объект типа <code>DocumentFilter.FilterBypass</code>, который предоставляет методы для изменения содержимого документа.
+                        </li>
+                        <li>
+                            <strong>offset</strong> - позиция в документе, с которой начинается замена текста.
+                        </li>
+                        <li>
+                            <strong>length</strong> - количество символов, которые необходимо заменить.
+                        </li>
+                        <li>
+                            <strong>text</strong> - строка, на которую необходимо заменить указанный участок текста.
+                        </li>
+                        <li>
+                            <strong>attrs</strong> - атрибуты текста.
+                        </li>
+                    </ul>
+                    <p>
+                        Если результат проверки методом <code>test()</code> для текста, полученного после замены указанного участка, является истинным, то метод передает управление родительской реализации <code>super.replace()</code> для выполнения замены текста в документе.
+                    </p>
+
+                    <h3>public void remove(DocumentFilter.FilterBypass fb, int offset, int length) throws BadLocationException</h3>
+                    <p>
+                        Данный метод переопределяет метод <code>remove</code> из класса <code>DocumentFilter</code>.
+                        Он вызывается, когда происходит удаление части текста из документа.
+                    </p>
+                    <ul class="infoList">
+                        <li>
+                            <strong>fb</strong> - объект типа <code>DocumentFilter.FilterBypass</code>, который предоставляет методы для изменения содержимого документа.
+                        </li>
+                        <li>
+                            <strong>offset</strong> - позиция в документе, с которой начинается удаление текста.
+                        </li>
+                        <li>
+                            <strong>length</strong> - количество символов, которые необходимо удалить.
+                        </li>
+                    </ul>
+                    <p>
+                        Если результат проверки методом <code>test()</code> для текста, полученного после удаления указанного участка, является истинным, то метод передает управление родительской реализации <code>super.remove()</code> для выполнения удаления текста из документа.
+                    </p>
+
+                    <h3>private boolean test(String text)</h3>
+                    <p>
+                        Данный закрытый метод проверяет, соответствует ли переданный текст условиям фильтрации.
+                    </p>
+                    <ul class="infoList">
+                        <li>
+                            <strong>text</strong> - текст для проверки.
+                        </li>
+                    </ul>
+                    <p>
+                        Метод перебирает каждый символ в тексте и проверяет, является ли он цифрой или символом точки ('.') в случае, если разрешена точка (<code>allowDot</code> равен <code>true</code>).
+                        Если символ не соответствует условиям, метод возвращает <code>false</code>, иначе возвращает <code>true</code>.
+                    </p>
+
+                </div>
+            </div>
+        
+            
+        </div>
+    </main>
+    <footer class="footer" id="footer">
+        <p>Самара ПГУТИ 2023г. Проект выполнен в рамках летней учебной практики.</p>
+    </footer>
+    <script src="scripts/scroll.js"></script>
+    <script src="scripts/gallery.js"></script>
+    <script src="scripts/textContent.js"></script>
+</body>
+
+</html>
