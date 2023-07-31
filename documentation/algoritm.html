@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Документация проекта</title>
-    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
@@ -20,7 +20,7 @@
     <main class="main">
         <div class="algoritm">
             <div class="rightSection">
-                <img class="gallery-img" src="./img/Алгоритм.png">
+                <img class="gallery-img" src="img/Алгоритм.png">
             </div>
             <div class="leftSection">
                 <h2>Алгоритм работы программы "Switch Config Retriever"</h2>
@@ -139,7 +139,13 @@
 <li>
     <h3>Метод <code>infoWindow()</code>:</h3>
     <ul class="infoList">
-        <li>Открывает сайт с документацией проекта.</li>
+        <li>Открывает диалоговое окно с информацией.</li>
+        <li>
+            Параметры:
+            <ul class="infoList">
+                <li><strong>message</strong> - текст для отображения в диалогово окне.</li>
+            </ul>
+        </li>
     </ul>
 </li>
 </ol>
@@ -149,8 +155,8 @@
             <h3>Диаграммы классов</h3>
             <p>Кликните на изображение чтобы открыть во весь экран</p>
             <div class="gallery">
-                <img class="gallery-img" src="./img/SwitchConfigRetriever.png">
-                <img class="gallery-img" src="./img/InitFilter.png">
+                <img class="gallery-img" src="img/SwitchConfigRetriever.png">
+                <img class="gallery-img" src="img/InitFilter.png">
             </div>
         </div>
         <div class="tabs-container">
@@ -159,9 +165,9 @@
                 <button class="tab-btn" onclick="toggleTab(this)">Показать текст</button>
                 <div class="text-content" style="display: none;">
                     <p>1 вариант с удалённым TFTP сервером:</p>
-                    <img src="./img/Схема передачи данных 1.drawio.png">
+                    <img src="img/Схема%20передачи%20данных%201.drawio.png">
                     <p>2 вариант с локальным TFTP сервером:</p>
-                    <img src="./img/Схема передачи данных 2.drawio.png">
+                    <img src="img/Схема%20передачи%20данных%202.drawio.png">
                 </div>
             </div>
             <div class="tab">
@@ -406,8 +412,11 @@
 <!-- Метод infoWindow -->
 <h3>private void infoWindow()</h3>
 <p>
-    Метод открывает сайт с документацией проекта.
+    Метод открывает диалоговое окно с информацией.
 </p>
+                    <li>
+                        <strong>message</strong> - текст для отображения в диалогово окне.
+                    </li>
 <!-- Метод main -->
 <h3>public static void main(String[] args)</h3>
 <p>
@@ -539,9 +548,9 @@
     <footer class="footer" id="footer">
         <p>Самара ПГУТИ 2023г. Проект выполнен в рамках летней учебной практики.</p>
     </footer>
-    <script src="./scripts/scroll.js"></script>
-    <script src="./scripts/gallery.js"></script>
-    <script src="./scripts/textContent.js"></script>
+    <script src="scripts/scroll.js"></script>
+    <script src="scripts/gallery.js"></script>
+    <script src="scripts/textContent.js"></script>
 </body>
 
 </html>
