@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.SocketException;
+import java.net.URI;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
@@ -27,6 +29,7 @@ import java.util.HashMap;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import javax.swing.event.HyperlinkEvent;
 public class SwitchConfigRetriever extends JFrame {
     final JTextArea statusTextArea;
     final JTextArea terminalTextArea;
@@ -133,9 +136,11 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow("For the program to work, you will need a TFTP server.\nVersion:0.1");
+                infoWindow("For the program to work, you will need a TFTP server.<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.1");
             }
         });
+
+
 
         terminalButton = new JButton("Terminal");
         terminalButton.addActionListener(new ActionListener() {
@@ -537,7 +542,20 @@ public class SwitchConfigRetriever extends JFrame {
 
 
     private void infoWindow(String message) {
-        JOptionPane.showMessageDialog(this, message);
+        JEditorPane editorPane = new JEditorPane("text/html", message);
+        editorPane.setEditable(false);
+
+        editorPane.addHyperlinkListener(e -> {
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                try {
+                    Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        JOptionPane.showMessageDialog(this, editorPane, "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public static void main(String[] args) {
