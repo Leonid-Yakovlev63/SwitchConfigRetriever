@@ -234,21 +234,13 @@ public class SwitchConfigRetriever extends JFrame {
         dlinkDevices.put("1.3.6.1.4.1.171.10.133.5.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.18.1", "upload cfg_toTFTP %s %s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.76.32.1", "upload cfg_toTFTP %s %s[%s].cfg");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s %s[%s].cfg"); //проверить
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s %s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.134.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.5.2", "upload cfg_toTFTP %s %s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.116.2", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.153.4.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.3", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.2", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        /*
-        * 192.168.200.60
-        192.168.200.68
-        192.168.200.73
-        192.168.200.163
-        192.168.200.164
-        192.168.200.169
-        * */
         configMap.put("D-Link", dlinkDevices);
 
         HashMap<String, String> juniperDevices = new HashMap<>();
@@ -276,7 +268,6 @@ public class SwitchConfigRetriever extends JFrame {
 
     }
 
-    // Метод для получения производителя по SNMP
     private String getSwitchManufacturer(String ipAddress) throws IOException {
         String community = "public";
         String oidSysDescr = "1.3.6.1.2.1.1.1.0";
@@ -302,8 +293,7 @@ public class SwitchConfigRetriever extends JFrame {
             if (response.getErrorStatus() == PDU.noError) {
                 VariableBinding vb = response.getVariableBindings().get(0);
                 String sysDescr = vb.getVariable().toString();
-
-                // Анализируем описание и возвращаем производителя
+                
                 if (sysDescr.contains("Cisco")) {
                     manufacturer = "Cisco";
                 }
@@ -332,14 +322,12 @@ public class SwitchConfigRetriever extends JFrame {
         return manufacturer;
     }
 
-    // Переписал метод для формирования команды, теперь он учитывает дату и время
+
     private String getCommandWithDateTime(String manufacturer, String sysObjectID, String ipAddress) {
         String TFTPserverIP = TFTPserverIPField.getText();
         HashMap<String, String> deviceMap = configMap.get(manufacturer);
-
         if (deviceMap != null) {
             String command = deviceMap.get(sysObjectID);
-
             if (command != null) {
                 command = String.format(command, TFTPserverIP, ipAddress, getCurrentDateTime());
                 return command;
@@ -348,7 +336,7 @@ public class SwitchConfigRetriever extends JFrame {
 
         return String.format("upload cfg_toTFTP %s %s[%s].cfg config_id 1", TFTPserverIP, ipAddress, getCurrentDateTime());
     }
-    // Метод для получения текущей даты и времени
+
     private String getCurrentDateTime() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm");
         return sdf.format(new Date());
@@ -375,15 +363,11 @@ public class SwitchConfigRetriever extends JFrame {
             appendStatus(String.valueOf(i) + ".");
             String ipAddress = subnet + "." + i;
             appendStatus("Checking: " + ipAddress);
-
             try {
-                // Подключение по SNMP для получения производителя
                 String manufacturer = getSwitchManufacturer(ipAddress);
-                // Получение имени устройства
                 String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
                 String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
                 String sysObjectID = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.2.0");
-                // Формирование команды к коммутатору
                 String command = getCommandWithDateTime(manufacturer, sysObjectID, ipAddress);
 
                 TelnetClient telnetClient = new TelnetClient();
@@ -502,7 +486,7 @@ public class SwitchConfigRetriever extends JFrame {
 
     private void threadSleep(int sleepTime){
         try {
-            Thread.sleep(sleepTime);  //Даём потоку подождать
+            Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -510,7 +494,6 @@ public class SwitchConfigRetriever extends JFrame {
 
     public static void openTerminal(String command) {
         try {
-            // Создаем процесс, выполняющий команду открытия терминала с заданной командой
             ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd", "/k", command);
             processBuilder.inheritIO();
             processBuilder.start();
@@ -524,7 +507,7 @@ public class SwitchConfigRetriever extends JFrame {
             @Override
             public void run() {
                 statusTextArea.append(message + "\n");
-                statusTextArea.setCaretPosition(statusTextArea.getDocument().getLength()); // Установить каретку в конец текста
+                statusTextArea.setCaretPosition(statusTextArea.getDocument().getLength());
             }
         });
     }
@@ -535,30 +518,24 @@ public class SwitchConfigRetriever extends JFrame {
             @Override
             public void run() {
                 terminalTextArea.append(message);
-                terminalTextArea.setCaretPosition(terminalTextArea.getDocument().getLength()); // Установить каретку в конец текста
+                terminalTextArea.setCaretPosition(terminalTextArea.getDocument().getLength());
             }
         });
     }
 
 
     private void infoWindow(String message) {
-        // Создаем компонент для отображения HTML-разметки
         JEditorPane editorPane = new JEditorPane("text/html", message);
         editorPane.setEditable(false);
-
-        // Добавляем обработчик события для ссылок
         editorPane.addHyperlinkListener(e -> {
             if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                 try {
-                    // Открываем ссылку в браузере
                     Desktop.getDesktop().browse(e.getURL().toURI());
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
             }
         });
-
-        // Отображаем диалоговое окно с компонентом содержащим HTML-разметку
         JOptionPane.showMessageDialog(this, editorPane, "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
