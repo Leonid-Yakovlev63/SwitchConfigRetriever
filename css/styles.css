@@ -125,6 +125,18 @@ li.navitem a:hover {
   .btn-up_hide {
 	display: none;
   }
+  .linkBlock{
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .link{
+    word-wrap: break-word;
+  }
+  @media (max-width: 750px) {
+    .algoritm {
+      display: block;
+    }
+  }
 *{
     margin: 0;
     padding: 0;
