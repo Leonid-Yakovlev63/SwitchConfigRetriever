@@ -137,6 +137,11 @@ li.navitem a:hover {
       display: block;
     }
   }
+@media (max-width: 320px) {
+    .gallery-img{
+      max-width: 270px;
+    }
+  }
 *{
     margin: 0;
     padding: 0;
