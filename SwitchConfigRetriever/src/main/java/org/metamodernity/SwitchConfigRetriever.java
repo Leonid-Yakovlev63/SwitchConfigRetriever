@@ -8,8 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.SocketException;
-import java.net.URI;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
@@ -25,11 +23,9 @@ import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
+import java.net.InetAddress;
 import javax.swing.event.HyperlinkEvent;
+
 public class SwitchConfigRetriever extends JFrame {
     final JTextArea statusTextArea;
     final JTextArea terminalTextArea;
@@ -39,16 +35,20 @@ public class SwitchConfigRetriever extends JFrame {
     final JTextField loginField;
 
     final JTextField TFTPserverIPField;
+
+
     final JPasswordField passwordField;
     final JButton startButton;
     final JButton pauseButton;
     final JButton infoButton;
     final JButton terminalButton;
 
+
     private Thread retrieverThread;
     private Thread controllerThread;
+
     final HashMap<String, HashMap<String, String>> configMap = new HashMap<>();
-    final String folderPath = "C:/SwitchConfigs/";
+
     private volatile boolean isRunning = false;
     private volatile boolean isPaused = false;
 
@@ -136,11 +136,9 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow("For the program to work, you will need a TFTP server.<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.1");
+                infoWindow("For the program to work, you will need a TFTP server.<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.2");
             }
         });
-
-
 
         terminalButton = new JButton("Terminal");
         terminalButton.addActionListener(new ActionListener() {
@@ -153,6 +151,7 @@ public class SwitchConfigRetriever extends JFrame {
 
         statusTextArea = new JTextArea();
         statusTextArea.setEditable(false);
+
 
         JScrollPane scrollPane = new JScrollPane(statusTextArea);
 
@@ -177,7 +176,7 @@ public class SwitchConfigRetriever extends JFrame {
         passwordField = new JPasswordField("QWEqwe12345");
         passwordField.setToolTipText("Enter the password");
 
-        JPanel inputPanel = new JPanel(new GridLayout(6, 2));
+        JPanel inputPanel = new JPanel(new GridLayout(7, 2));
 
         inputPanel.add(new JLabel("Subnet:"));
         inputPanel.add(subnetField);
@@ -187,6 +186,7 @@ public class SwitchConfigRetriever extends JFrame {
         inputPanel.add(endIPField);
         inputPanel.add(new JLabel("TFTP server:"));
         inputPanel.add(TFTPserverIPField);
+
         inputPanel.add(new JLabel("Login:"));
         inputPanel.add(loginField);
         inputPanel.add(new JLabel("Password:"));
@@ -227,30 +227,38 @@ public class SwitchConfigRetriever extends JFrame {
     private void initializeConfigMap() {
 
         HashMap<String, String> dlinkDevices = new HashMap<>();
-        dlinkDevices.put("1.3.6.1.4.1.171.10.117.4.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.76.44.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.75.14.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("11.3.6.1.4.1.171.10.75.14.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.133.5.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.75.18.1", "upload cfg_toTFTP %s %s[%s].cfg");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.76.32.1", "upload cfg_toTFTP %s %s[%s].cfg");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s %s[%s].cfg");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.134.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.75.5.2", "upload cfg_toTFTP %s %s[%s].cfg");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.116.2", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.153.4.1", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.3", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.2", "upload cfg_toTFTP %s %s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.117.4.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.44.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.14.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("11.3.6.1.4.1.171.10.75.14.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.133.5.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.18.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.32.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg"); //проверить
+        dlinkDevices.put("1.3.6.1.4.1.171.10.134.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.5.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.116.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.153.4.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.3", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
+        /*
+        * 192.168.200.60
+        192.168.200.68
+        192.168.200.73
+        192.168.200.163
+        192.168.200.164
+        192.168.200.169
+        * */
         configMap.put("D-Link", dlinkDevices);
 
         HashMap<String, String> juniperDevices = new HashMap<>();
-        juniperDevices.put("1.3.6.1.4.1.2636.1.1.1.2.44", "file copy /var/tmp/config.cfg tftp://%s/%s[%s].cfg");
+        juniperDevices.put("1.3.6.1.4.1.2636.1.1.1.2.44", "file copy /var/tmp/config.cfg tftp://%s/./%s/%s[%s].cfg");
         configMap.put("Juniper", juniperDevices);
 
         HashMap<String, String> ciscoDevices = new HashMap<>();
-        ciscoDevices.put("EX8200", "copy running-config tftp %s %s[%s].cfg");
-        ciscoDevices.put("EX3300", "copy running-config tftp %s %s[%s].cfg");
-        ciscoDevices.put("EX3200", "copy running-config tftp %s %s[%s].cfg");
+        ciscoDevices.put("EX8200", "copy running-config tftp %s ./%s/%s[%s].cfg");
+        ciscoDevices.put("EX3300", "copy running-config tftp %s ./%s/%s[%s].cfg");
+        ciscoDevices.put("EX3200", "copy running-config tftp %s ./%s/%s[%s].cfg");
         configMap.put("Cisco", ciscoDevices);
 
         HashMap<String, String> microTikDevices = new HashMap<>();
@@ -258,16 +266,17 @@ public class SwitchConfigRetriever extends JFrame {
         configMap.put("MicroTik", microTikDevices);
 
         HashMap<String, String> eltexDevices = new HashMap<>();
-        eltexDevices.put("1.3.6.1.4.1.35265.1.52", "copy running-config tftp://%s/%s[%s].cfg");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.89", "copy running-config tftp://%s/%s[%s].cfg");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.76", "copy running-config tftp://%s/%s[%s].cfg");
-        eltexDevices.put("1.3.6.1.4.1.890.1.5.8.68", "copy running-config tftp://%s/%s[%s].cfg");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.81", "copy running-config tftp://%s/%s[%s].cfg");
-        eltexDevices.put("1.3.6.1.4.1.35265.1.83", "copy running-config tftp://%s/%s[%s].cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.52", "copy running-config tftp://%s/./%s/%s[%s].cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.89", "copy running-config tftp://%s/./%s/%s[%s].cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.76", "copy running-config tftp://%s/./%s/%s[%s].cfg");
+        eltexDevices.put("1.3.6.1.4.1.890.1.5.8.68", "copy running-config tftp://%s/./%s/%s[%s].cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.81", "copy running-config tftp://%s/./%s/%s[%s].cfg");
+        eltexDevices.put("1.3.6.1.4.1.35265.1.83", "copy running-config tftp://%s/./%s/%s[%s].cfg");
         configMap.put("Eltex", eltexDevices);
 
     }
 
+    // Метод для получения производителя по SNMP
     private String getSwitchManufacturer(String ipAddress) throws IOException {
         String community = "public";
         String oidSysDescr = "1.3.6.1.2.1.1.1.0";
@@ -293,7 +302,8 @@ public class SwitchConfigRetriever extends JFrame {
             if (response.getErrorStatus() == PDU.noError) {
                 VariableBinding vb = response.getVariableBindings().get(0);
                 String sysDescr = vb.getVariable().toString();
-                
+
+                // Анализируем описание и возвращаем производителя
                 if (sysDescr.contains("Cisco")) {
                     manufacturer = "Cisco";
                 }
@@ -322,122 +332,142 @@ public class SwitchConfigRetriever extends JFrame {
         return manufacturer;
     }
 
-
+    // Переписал метод для формирования команды, теперь он учитывает дату и время
     private String getCommandWithDateTime(String manufacturer, String sysObjectID, String ipAddress) {
         String TFTPserverIP = TFTPserverIPField.getText();
         HashMap<String, String> deviceMap = configMap.get(manufacturer);
+
         if (deviceMap != null) {
             String command = deviceMap.get(sysObjectID);
+
             if (command != null) {
-                command = String.format(command, TFTPserverIP, ipAddress, getCurrentDateTime());
+                command = String.format(command, TFTPserverIP, manufacturer, ipAddress, getCurrentDateTime());
                 return command;
             }
         }
 
-        return String.format("upload cfg_toTFTP %s %s[%s].cfg config_id 1", TFTPserverIP, ipAddress, getCurrentDateTime());
+        return String.format("upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1", TFTPserverIP, manufacturer, ipAddress, getCurrentDateTime());
     }
-
+    // Метод для получения текущей даты и времени
     private String getCurrentDateTime() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm");
         return sdf.format(new Date());
     }
+    private boolean isHostReachable(String ipAddress) {
+        try {
+            InetAddress inetAddress = InetAddress.getByName(ipAddress);
+            return inetAddress.isReachable(100);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     private void retrieveSwitchConfigs() throws InterruptedException {
-        File folder = new File(this.folderPath);
-        if (!folder.exists()) {
-            if (folder.mkdir()) {
-                appendStatus("SwitchConfigs folder created");
-            } else {
-                appendStatus("Failed to create SwitchConfigs folder");
-                return;
-            }
-        }
+
         String subnet = subnetField.getText();
         int startIP = Integer.parseInt(startIPField.getText());
         int endIP = Integer.parseInt(endIPField.getText());
         String login = loginField.getText();
         String password = new String(passwordField.getPassword());
+
         appendStatus("===========================");
         for (int i = startIP; i <= endIP && isRunning; i++) {
+
             appendStatus("===========================");
             appendStatus(String.valueOf(i) + ".");
             String ipAddress = subnet + "." + i;
-            appendStatus("Checking: " + ipAddress);
-            try {
-                String manufacturer = getSwitchManufacturer(ipAddress);
-                String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
-                String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
-                String sysObjectID = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.2.0");
-                String command = getCommandWithDateTime(manufacturer, sysObjectID, ipAddress);
+            boolean isReachable = isHostReachable(ipAddress);
+            if (isReachable) {
+                appendStatus("Checking: " + ipAddress);
 
-                TelnetClient telnetClient = new TelnetClient();
-                telnetClient.setDefaultTimeout(1500);
-                telnetClient.connect(ipAddress, 23);
+                try {
+                    // Подключение по SNMP для получения производителя
+                    String manufacturer = getSwitchManufacturer(ipAddress);
 
-                appendStatus("Connected to: " + ipAddress);
-                appendStatus("  Device name: " + deviceName);
-                appendStatus("  Manufacturer: " + manufacturer);
-                appendStatus("  sysName:" + sysName);
-                appendStatus("  sysObjectID:" + sysObjectID);
 
-                InputStream in = telnetClient.getInputStream();
-                OutputStream out = telnetClient.getOutputStream();
-                threadSleep(500);
-                byte[] buff = new byte[1024];
-                int ret_read;
 
-                threadSleep(500);
-                ret_read = in.read(buff);
 
-                if (ret_read > 0) {
-                    appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
+                    // Получение имени устройства
+                    String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
+                    String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
+                    String sysObjectID = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.2.0");
+                    // Формирование команды к коммутатору
+                    String command = getCommandWithDateTime(manufacturer, sysObjectID, ipAddress);
+
+                    TelnetClient telnetClient = new TelnetClient();
+                    telnetClient.setDefaultTimeout(1500);
+                    telnetClient.connect(ipAddress, 23);
+
+                    appendStatus("Connected to: " + ipAddress);
+                    appendStatus("  Device name: " + deviceName);
+                    appendStatus("  Manufacturer: " + manufacturer);
+                    appendStatus("  sysName:" + sysName);
+                    appendStatus("  sysObjectID:" + sysObjectID);
+
+                    InputStream in = telnetClient.getInputStream();
+                    OutputStream out = telnetClient.getOutputStream();
+                    threadSleep(500);
+                    byte[] buff = new byte[1024];
+                    int ret_read;
+
+                    threadSleep(500);
+                    ret_read = in.read(buff);
+
+                    if (ret_read > 0) {
+                        appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
+                    }
+
+                    PrintWriter writer = new PrintWriter(out, true);
+
+                    writer.println(login);
+                    threadSleep(500);
+
+                    ret_read = in.read(buff);
+                    if (ret_read > 0) {
+                        appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
+                    }
+
+                    writer.println(password);
+                    threadSleep(500);
+
+                    ret_read = in.read(buff);
+                    if (ret_read > 0) {
+                        appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
+                    }
+
+                    out.write(("\r\n").getBytes());
+                    out.flush();
+                    threadSleep(500);
+                    ret_read = in.read(buff);
+                    if (ret_read > 0) {
+                        appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
+                    }
+
+                    threadSleep(500);
+                    writer.println(command);
+                    threadSleep(500);
+
+                    out.write((command + "\r\n").getBytes());
+                    out.flush();
+                    appendTerminal(command);
+                    threadSleep(3000);
+                    ret_read = in.read(buff);
+                    if (ret_read > 0) {
+                        appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
+                    }
+                    telnetClient.disconnect();
+                    appendStatus("Disconnected from: " + ipAddress);
+                } catch (SocketException e) {
+                    appendStatus("Connection failed: " + e.getMessage());
+                } catch (IOException e) {
+                    appendStatus("IO error: " + e.getMessage());
                 }
-
-                PrintWriter writer = new PrintWriter(out, true);
-
-                writer.println(login);
-                threadSleep(500);
-
-                ret_read = in.read(buff);
-                if (ret_read > 0) {
-                    appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
-                }
-
-                writer.println(password);
-                threadSleep(500);
-
-                ret_read = in.read(buff);
-                if (ret_read > 0) {
-                    appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
-                }
-
-                out.write(("\r\n").getBytes());
-                out.flush();
-                threadSleep(500);
-                ret_read = in.read(buff);
-                if (ret_read > 0) {
-                    appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
-                }
-
-                threadSleep(500);
-                writer.println(command);
-                threadSleep(500);
-
-                out.write((command + "\r\n").getBytes());
-                out.flush();
-                appendTerminal(command);
-                threadSleep(3000);
-                ret_read = in.read(buff);
-                if (ret_read > 0) {
-                    appendTerminal(new String(buff, 0, ret_read, "UTF-8"));
-                }
-                telnetClient.disconnect();
-                appendStatus("Disconnected from: " + ipAddress);
-            } catch (SocketException e) {
-                appendStatus("Connection failed: " + e.getMessage());
-            } catch (IOException e) {
-                appendStatus("IO error: " + e.getMessage());
+            } else {
+                appendStatus("Host " + ipAddress + " is not reachable. Skipping...");
             }
+
 
             if (isPaused) {
                 pauseButton.setEnabled(true);
@@ -453,6 +483,7 @@ public class SwitchConfigRetriever extends JFrame {
         }
         appendStatus("===========================");
     }
+
 
     private String getInfoBySNMP(String ipAddress, String oidSys) throws IOException {
         String community = "public";
@@ -486,7 +517,7 @@ public class SwitchConfigRetriever extends JFrame {
 
     private void threadSleep(int sleepTime){
         try {
-            Thread.sleep(sleepTime);
+            Thread.sleep(sleepTime);  //Даём потоку подождать
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -494,7 +525,15 @@ public class SwitchConfigRetriever extends JFrame {
 
     public static void openTerminal(String command) {
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd", "/k", command);
+            String os = System.getProperty("os.name").toLowerCase();
+            ProcessBuilder processBuilder;
+
+            if (os.contains("nix") || os.contains("nux") || os.contains("mac")) {
+                processBuilder = new ProcessBuilder("x-terminal-emulator", "-e", command);
+            } else {
+                processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd", "/k", command);
+            }
+
             processBuilder.inheritIO();
             processBuilder.start();
         } catch (IOException e) {
@@ -507,7 +546,7 @@ public class SwitchConfigRetriever extends JFrame {
             @Override
             public void run() {
                 statusTextArea.append(message + "\n");
-                statusTextArea.setCaretPosition(statusTextArea.getDocument().getLength());
+                statusTextArea.setCaretPosition(statusTextArea.getDocument().getLength()); // Установить каретку в конец текста
             }
         });
     }
@@ -518,7 +557,7 @@ public class SwitchConfigRetriever extends JFrame {
             @Override
             public void run() {
                 terminalTextArea.append(message);
-                terminalTextArea.setCaretPosition(terminalTextArea.getDocument().getLength());
+                terminalTextArea.setCaretPosition(terminalTextArea.getDocument().getLength()); // Установить каретку в конец текста
             }
         });
     }
@@ -549,3 +588,4 @@ public class SwitchConfigRetriever extends JFrame {
         });
     }
 }
+
