@@ -136,7 +136,7 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow("For the program to work, you will need a TFTP server.<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.2");
+                infoWindow("For the program to work, you will need a TFTP server.<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.3");
             }
         });
 
@@ -234,21 +234,13 @@ public class SwitchConfigRetriever extends JFrame {
         dlinkDevices.put("1.3.6.1.4.1.171.10.133.5.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.18.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.76.32.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg"); //проверить
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.134.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.5.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.116.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.153.4.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.3", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.15.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
-        /*
-        * 192.168.200.60
-        192.168.200.68
-        192.168.200.73
-        192.168.200.163
-        192.168.200.164
-        192.168.200.169
-        * */
         configMap.put("D-Link", dlinkDevices);
 
         HashMap<String, String> juniperDevices = new HashMap<>();
@@ -275,8 +267,7 @@ public class SwitchConfigRetriever extends JFrame {
         configMap.put("Eltex", eltexDevices);
 
     }
-
-    // Метод для получения производителя по SNMP
+    
     private String getSwitchManufacturer(String ipAddress) throws IOException {
         String community = "public";
         String oidSysDescr = "1.3.6.1.2.1.1.1.0";
@@ -303,7 +294,6 @@ public class SwitchConfigRetriever extends JFrame {
                 VariableBinding vb = response.getVariableBindings().get(0);
                 String sysDescr = vb.getVariable().toString();
 
-                // Анализируем описание и возвращаем производителя
                 if (sysDescr.contains("Cisco")) {
                     manufacturer = "Cisco";
                 }
@@ -332,7 +322,6 @@ public class SwitchConfigRetriever extends JFrame {
         return manufacturer;
     }
 
-    // Переписал метод для формирования команды, теперь он учитывает дату и время
     private String getCommandWithDateTime(String manufacturer, String sysObjectID, String ipAddress) {
         String TFTPserverIP = TFTPserverIPField.getText();
         HashMap<String, String> deviceMap = configMap.get(manufacturer);
@@ -348,7 +337,7 @@ public class SwitchConfigRetriever extends JFrame {
 
         return String.format("upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1", TFTPserverIP, manufacturer, ipAddress, getCurrentDateTime());
     }
-    // Метод для получения текущей даты и времени
+
     private String getCurrentDateTime() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm");
         return sdf.format(new Date());
@@ -383,17 +372,13 @@ public class SwitchConfigRetriever extends JFrame {
                 appendStatus("Checking: " + ipAddress);
 
                 try {
-                    // Подключение по SNMP для получения производителя
+
                     String manufacturer = getSwitchManufacturer(ipAddress);
 
-
-
-
-                    // Получение имени устройства
                     String deviceName = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.5.0");
                     String sysName = getInfoBySNMP(ipAddress, "1.3.6.1.2.1.1.1.0");
                     String sysObjectID = getInfoBySNMP(ipAddress, ".1.3.6.1.2.1.1.2.0");
-                    // Формирование команды к коммутатору
+
                     String command = getCommandWithDateTime(manufacturer, sysObjectID, ipAddress);
 
                     TelnetClient telnetClient = new TelnetClient();
@@ -517,7 +502,7 @@ public class SwitchConfigRetriever extends JFrame {
 
     private void threadSleep(int sleepTime){
         try {
-            Thread.sleep(sleepTime);  //Даём потоку подождать
+            Thread.sleep(sleepTime);  
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
