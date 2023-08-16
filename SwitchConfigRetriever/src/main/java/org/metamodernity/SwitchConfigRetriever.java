@@ -136,7 +136,7 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow("For the program to work, you will need a TFTP server.<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.3");
+                infoWindow("For the program to work, you will need a TFTP server with folders for each manufacturer (D-Link, Juniper, Cisco, MicroTik, Eltex).<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.3");
             }
         });
 
@@ -234,7 +234,7 @@ public class SwitchConfigRetriever extends JFrame {
         dlinkDevices.put("1.3.6.1.4.1.171.10.133.5.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.18.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.76.32.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
-        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
+        dlinkDevices.put("1.3.6.1.4.1.171.10.76.19.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg"); //проверить
         dlinkDevices.put("1.3.6.1.4.1.171.10.134.1", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.75.5.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg");
         dlinkDevices.put("1.3.6.1.4.1.171.10.116.2", "upload cfg_toTFTP %s ./%s/%s[%s].cfg config_id 1");
@@ -254,7 +254,7 @@ public class SwitchConfigRetriever extends JFrame {
         configMap.put("Cisco", ciscoDevices);
 
         HashMap<String, String> microTikDevices = new HashMap<>();
-        microTikDevices.put("1.3.6.1.4.1.14988.1", "/export compact");
+        microTikDevices.put("1.3.6.1.4.1.14988.1", "/system backup save name=backup /tool fetch address=%s src-path=./%s/%s[%s].cfg dst-path=backup.cfg");
         configMap.put("MicroTik", microTikDevices);
 
         HashMap<String, String> eltexDevices = new HashMap<>();
@@ -267,7 +267,7 @@ public class SwitchConfigRetriever extends JFrame {
         configMap.put("Eltex", eltexDevices);
 
     }
-    
+
     private String getSwitchManufacturer(String ipAddress) throws IOException {
         String community = "public";
         String oidSysDescr = "1.3.6.1.2.1.1.1.0";
@@ -502,7 +502,7 @@ public class SwitchConfigRetriever extends JFrame {
 
     private void threadSleep(int sleepTime){
         try {
-            Thread.sleep(sleepTime);  
+            Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
