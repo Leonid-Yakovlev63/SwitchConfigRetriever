@@ -136,7 +136,7 @@ public class SwitchConfigRetriever extends JFrame {
         infoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                infoWindow("For the program to work, you will need a TFTP server with folders for each manufacturer (D-Link, Juniper, Cisco, MicroTik, Eltex).<br>Source Code: <a href=\"https://github.com/metamodernity/SwitchConfigRetriever\">https://github.com/metamodernity/SwitchConfigRetriever/</a><br>Documentation: <a href=\"https://metamodernity.github.io/SwitchConfigRetriever/\">https://metamodernity.github.io/SwitchConfigRetriever/</a><br>Version: 0.3");
+                infoWindow("For the program to work, you will need a TFTP server with folders for each manufacturer (D-Link, Juniper, Cisco, MicroTik, Eltex).<br>Source Code: <a href=\"https://github.com/Leonid-Yakovlev63/SwitchConfigRetriever/tree/main\">https://github.com/Leonid-Yakovlev63/SwitchConfigRetriever/tree/main</a><br>Documentation: <a href=\"https://leonid-yakovlev63.github.io/SwitchConfigRetriever/index.html\">https://leonid-yakovlev63.github.io/SwitchConfigRetriever/index.html</a><br>Version: 0.3");
             }
         });
 
