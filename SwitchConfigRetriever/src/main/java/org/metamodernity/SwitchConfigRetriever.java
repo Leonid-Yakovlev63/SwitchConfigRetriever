@@ -159,11 +159,11 @@ public class SwitchConfigRetriever extends JFrame {
         ((PlainDocument) subnetField.getDocument()).setDocumentFilter(new IntFilter(true));
         subnetField.setToolTipText("Enter the subnet");
 
-        startIPField = new JTextField("1");
+        startIPField = new JTextField("0");
         ((PlainDocument) startIPField.getDocument()).setDocumentFilter(new IntFilter(false));
         startIPField.setToolTipText("Enter the starting IP address");
 
-        endIPField = new JTextField("254");
+        endIPField = new JTextField("255");
         ((PlainDocument) endIPField.getDocument()).setDocumentFilter(new IntFilter(false));
         endIPField.setToolTipText("Enter the ending IP address");
 
